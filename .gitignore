@@ -1,0 +1,15 @@
+.env
+env
+.venv/
+vectorstore/
+leads.csv
+__pycache__/
+*.pyc
+data/website_scraped.txt
+utils/data/
+utils/__pycache__/
+check_key.py
+debug_data.py
+test_groq.py
+test_openai.py
+utils/scrape_website.py

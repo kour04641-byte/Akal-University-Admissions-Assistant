@@ -1,0 +1,7 @@
+streamlit
+scikit-learn
+numpy
+groq
+python-dotenv
+requests
+beautifulsoup4
