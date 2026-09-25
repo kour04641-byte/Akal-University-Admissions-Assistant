@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 from rag_pipeline import (
     APPLY_URL,
@@ -16,7 +17,7 @@ from utils.leads import normalize_phone, save_lead, valid_email
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title=f"{UNIVERSITY_NAME} Assistant",
+    page_title=f"{UNIVERSITY_NAME} Admissions Assistant",
     page_icon="🎓",
     layout="wide",
 )
@@ -119,7 +120,7 @@ with st.sidebar:
 # =========================
 # TITLE (shown immediately)
 # =========================
-st.title(f"{UNIVERSITY_NAME} Admission Assistant")
+st.title(f"{UNIVERSITY_NAME} Admissions Assistant")
 st.caption(
     "Answers come from the university's official information. "
     "Always confirm fees with the admission office."
@@ -197,3 +198,12 @@ if prompt:
             st.caption("Sources: " + ", ".join(sources))
 
     st.session_state.history.append({"role": "assistant", "content": reply})
+
+    # Scroll down automatically so the newest answer is visible without manual scrolling
+    components.html(
+        "<script>"
+        "window.parent.document.querySelector('section.main').scrollTo("
+        "0, window.parent.document.querySelector('section.main').scrollHeight);"
+        "</script>",
+        height=0,
+    )
