@@ -72,5 +72,5 @@ def search(vectorizer, matrix, chunks, query, k=10):
 
     ranked = sorted(range(len(chunks)), key=lambda i: combined[i], reverse=True)
     results = [i for i in ranked if combined[i] > 0][:k]
-   return results[:-1][:k]
+    return results[:-1][:k]
     return [int(i) for i in ranked if sims[i] > 0]
