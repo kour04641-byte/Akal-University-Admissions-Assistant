@@ -1,38 +1,98 @@
-## Akal University - programme areas
-Akal University, Talwandi Sabo offers UG (honours), PG and Ph.D. programmes in these streams:
-- Humanities and Social Sciences: Economics, Education, English, Psychology, Social Science, Punjabi, Liberal Arts, Sri Guru Granth Sahib Studies
-- Sciences: Chemistry, Mathematics, Life Sciences (Botany, Medical), Physics, Zoology
-- Engineering and Technology: Computer Science and Engineering (B.Tech), Computer Applications (BCA, MCA)
-- Management: Commerce and Business Administration (Akal Business School)
-- Paramedical Sciences: Physiotherapy, Medical Lab Technology
-Most programmes follow the semester system and are honours-based.
+## Department-wise Programs, Research Areas & Career Paths — Source: Official Prospectus 2026-27
 
-## Humanities and Social Sciences programmes - duration and eligibility
-- B.A. (Hons.) Economics: 4 years, 10+2 with 60% marks. M.A. (Hons.) Economics: 2 years, graduation with 60%. Ph.D. Economics: 3 years.
-- B.A. (Hons.) English: 4 years, 10+2 with 60%. M.A. (Hons.) English: 2 years, graduation with 60% or any degree with at least 4 English papers. Ph.D. English: 3 years.
-- B.A. (Hons.) Psychology: 4 years, 10+2 with 60%. M.A. (Hons.) Psychology: 2 years, B.Sc. with Psychology as a subject and 60%. Ph.D. Psychology: 3 years.
-- B.A. (Hons.) Social Science: 4 years, 10+2 with 60%. Ph.D. in History and Political Science: 3 years. M.A. History, Political Science and Punjabi are also offered at PG level.
-- Integrated B.A. B.Ed.: 4 years, 10+2 with 60% (55% for SC/ST and persons with disability).
-- B.A. (Hons.) Sri Guru Granth Sahib Studies: 3 years, 10+2 with 60% (55% for reserved categories). Certificate Course in Sri Guru Granth Sahib Studies: 1 year, only for students already enrolled in the university.
-- B.A. (Hons.) Punjabi and B.A. (Hons.) Liberal Arts (Punjabi medium) are also offered.
+## Faculty of Sciences
 
-## Sciences programmes - duration and eligibility
-- B.Sc. (Hons.) Chemistry: 4 years, 10+2 with 60%. M.Sc. (Hons.) Chemistry: 2 years, B.Sc. with Chemistry and 60%. Ph.D. Chemistry: 3 years.
-- B.Sc. (Hons.) Mathematics: 4 years, 10+2 with Mathematics and 60%. M.Sc. (Hons.) Mathematics: 2 years, B.Sc. with Mathematics and 60%. Ph.D. Mathematics: 3 years.
-- B.Sc. (Hons.) Physics: 3 years, 10+2 with Physics and 60%. M.Sc. (Hons.) Physics: 2 years, B.Sc. with Physics and 60%. Ph.D. Physics: 3 years.
-- B.Sc. Medical (Life Sciences): 3 years, 10+2 with 60% (55% for reserved categories). M.Sc. Botany: 2 years, B.Sc. Medical with 60% (55% reserved). Ph.D. Botany: 3 years (Master's with 60%, or exemption via CSIR-NET/GATE).
-- M.Sc. Zoology is also offered at PG level.
+**Department of Physics**
+Programs: B.Sc.(Hons.), B.Sc.(Non-Medical), B.Sc.(Hons. with Research), M.Sc., Ph.D
+International collaborations: IPGP-CNRS (France), Rutgers University (USA), HBCSE-TIFR Mumbai, IIT Roorkee, VECC Kolkata, Panjab University
+Research areas: Energy Harvesting, Polymeric Shielding & Nano Materials; Theoretical Nuclear Physics; Glasses for Functional Applications; Quantum Optics, Quantum Information & Quantum Machine Learning
+Careers: Professor/TGT/PGT Teacher; Scientist at DRDO, ISRO, BARC, ONGC, BHEL; Radiation Physicist; Data Scientist
 
-## Engineering, Computer Applications, Commerce and Management programmes
-- B.Tech (Hons.) Computer Science and Engineering (specialisations: AI-ML, Data Science, Cyber Security): 4 years, 10+2 Non-Medical with 60% (55% for reserved categories).
-- BCA (Hons.) (AI-ML, Data Analytics, Graphic Design and Web Development): 3 years, 10+2 in any stream with 60% (55% for reserved categories). Master of Computer Applications (MCA) is offered at PG level.
-- B.Com (Hons.): 4 years, 10+2 with 60%. B.Com (Hons.) + CA is also offered. M.Com (Hons.): 2 years, B.Com with 60%. Ph.D. Commerce: 3 years.
-- BBA (Hons.) Business Analytics: 3 years, 10+2 with 60% (55% for reserved categories). MBA - Data Analytics is offered at PG level.
+**Department of Chemistry**
+Programs: B.Sc.(Hons.), B.Sc.(Hons. with Research), M.Sc., Ph.D
+Research areas: Organic, Inorganic, Physical & Analytical Chemistry; Green Chemistry and Sustainable Materials; Environmental Chemistry and Wastewater Treatment; Nanoscience and Nanotechnology; Polymer Chemistry and Material Science
+Careers: Professor/TGT/PGT; Pharmaceutical & Chemical Industries; Forensic Labs; ONGC, IOCL, Pollution Control Boards; Food Safety Officer
 
-## Paramedical programmes
-- Bachelor of Physiotherapy (BPT): 4 years plus 1 year compulsory internship. Eligibility: 10+2 with Physics, Chemistry and Biology (PCB) with 50% marks; appearing in NEET is mandatory.
-- B.Sc. Medical Lab Technology (MLT): 4 years, 10+2 with 60% marks (55% for reserved categories).
-- PG Diploma in Guidance and Counselling is also offered.
+**Department of Mathematics**
+Programs: B.Sc.(Hons.), B.Sc.(Hons. with Research), M.Sc., Ph.D
+Highlights: 100% placement for eligible PG students; strong national & international collaborations
+Research areas: Group Theory, Number Theory, Fuzzy Optimization, Ordinary/Fractional/Non-Linear Differential Equations
+Careers: Professor/Researcher/TGT/PGT; Scientist at DRDO, ISRO; Data Analyst, Mathematical Modelling & Computational Expert, Banking
 
-## Ph.D. programme - disciplines
-Ph.D. seats are offered in 13 subjects: Chemistry, Commerce, Computer Science, Economics, Education, English, Mathematics, Physics, Punjabi, Management, Political Science, Zoology and History. The number of seats in each department depends on supervisor availability and specialization.
+**Department of Life Sciences**
+Programs: B.Sc.(Hons.), B.Sc.(Hons. with Research), M.Sc.(Zoology), Ph.D
+Special training: Apiculture, Vermi-composting, Aquarium Fish Keeping, Molecular Biology techniques
+Research areas: Entomology & Pest Management; Animal Physiology & Biochemistry; Molecular Biology, Aquatic Biology & Fisheries; Parasitology & Immunology
+Careers: Professor/TGT/PGT; Research Scientist; Infection Control Specialist, Medical Technologist, Fishery Officer, Wildlife Conservationist, Embryologist, Ecologist
+
+**Department of Physiotherapy**
+Program: Bachelor of Physiotherapy (BPT) — 5 years (4 years + 1 year compulsory internship)
+Highlights: Free Physiotherapy OPD, ultra-modern physiotherapy facilities, physiotherapy camps in rural/urban areas
+Research areas: Orthopaedics, Neurology, Cardiopulmonary, Pediatrics, Geriatrics, Women's Health & Sports
+Careers: Professor/Researcher/Lecturer; Rehabilitation Specialist; Cardiopulmonary/Geriatric/Pediatric Physiotherapist
+
+## Faculty of Engineering & Technology
+
+**Department of Computer Science & Engineering**
+Programs: B.Tech.(CSE) Data Science / AI-ML / Cyber Security; BCA(Hons.) Data Analytics / AI-ML / Graphic Design & Web Development; MCA; Ph.D
+Research areas: Machine Learning & AI, Agentic AI & Generative AI, Blockchain & Cyber Security, Cloud Computing, Software Development
+Careers: Software Engineer, Network Engineer, System Administrator, IT Project Manager, AI Specialist, Robotics Engineer, Blockchain Developer, Cloud Architect, Cyber Analyst, Data/Information Scientist; Armed Forces Technical Entry
+
+## Faculty of Humanities & Social Sciences
+
+**Department of Education**
+Program: B.A.-B.Ed (4-Year Integrated ITEP), Ph.D
+Features: ITEP curriculum, constructivist learning, ICT-enabled classrooms, inclusive education
+
+**Department of Social Science**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), M.A., Ph.D
+Special focus: Competitive exams like IAS, IPS, IFS
+Research areas: Great-Power Politics, India's Foreign Policy, South Asian Security Dynamics, State Politics, Poverty & Welfare Studies, Modern/Medieval Indian History
+Careers: Professor/TGT/PGT; Political Consultant/Analyst/Advisor; Policy Analyst; Archaeologist; Archivist
+
+**Department of Economics**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), M.A., Ph.D
+Research areas: Agricultural & Health Economics, Climate Change and Health, Development & Ecological Economics, Migration and Development, International Trade
+Careers: Professor/Researcher/TGT/PGT; Business/Data Analyst; Economics & Financial Consultant; Indian Economics Services; Policy Advisor
+
+**Department of Psychology**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), M.A., Post Graduate Diploma in Guidance & Counselling, Ph.D
+Features: Personal counseling for student mental well-being, hands-on psychological assessment tools
+Research areas: Clinical, Cognitive, Industrial, Developmental, Sports, Health, Positive, Environmental & Military Psychology; Guidance & Counseling; Stress Management
+Careers: Professor/Researcher/TGT/PGT/Counselor; Psychologist, Forensic Psychologist, Neuropsychologist, Child Psychologist; De-addiction Centers
+
+**Department of Liberal Arts (Punjabi Medium)**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), Ph.D
+Research areas: Social/Political/World History, Comparative Politics, International Relations, Punjabi Language & Linguistics, Punjabi Literature, Punjabi Culture & Society, History of Punjab, Punjabi Folklore
+Careers: Professor, School Teacher, Academic Counselor; Cultural Officer, Tourism Officer, Heritage Manager; UPSC Civil Services, State PSC; Archaeologist, Museum Curator, Archivist
+
+**Department of English Studies**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), M.A., Ph.D
+Research areas: English Language & Literature, Cultural Studies, Marginalised Literature, Effective Communication Skills
+Careers: Professors/Teachers/Researchers; Editorial & Publishing; Content Strategy & Copywriting; Public Speaking; strategic campus placement cell support
+
+**Punjabi Department (ਪੰਜਾਬੀ ਵਿਭਾਗ)**
+Programs: B.A.(Hons.), B.A.(Hons. with Research), M.A.(Hons.), Ph.D
+Focus: Punjabi language, literature & culture; Gurbani grammar; history of Punjabi language and Gurmukhi script; translation (English-Hindi-Punjabi)
+Careers: Teaching (school/college/university); journalism & media; translation; script writing; literary writing
+
+**Department of Sri Guru Granth Sahib Studies (ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਸਟੱਡੀਜ਼ ਵਿਭਾਗ)**
+Programs: B.A.(Hons.) — 4 years, fully residential and COMPLETELY FREE (no tuition, no boarding/lodging charges — probably the first such program by any university in India or abroad); also Certificate Courses
+Covers: Complete recitation (Sampuran Sanjhiya) of Sri Guru Granth Sahib Ji, Sikh history, comparative study of religions, Katha and Vyakhyan (religious discourse)
+Careers: Religious teacher; Sikh preacher (Granthi), Kirtan performer (Ragi/Kirtaniya); jobs in religious organizations; Government — NCC in the Army
+
+## Faculty of Management & Commerce
+
+**Department of Management**
+Programs: BBA(Hons.) Business Analytics, MBA Data Analytics, Ph.D
+Highlight: MBA offers a 1+1 international arrangement in collaboration with Virginia Commonwealth University (USA) and University of North Carolina (USA)
+Research areas: Industry 4.0 & 5.0, Digital Transformation, Consumer Behavior & Sustainability, specialization in Marketing/Finance/HR
+Careers: Business Intelligence Analyst, Marketing Analyst, Management Consultant, Finance/Risk Analyst, E-commerce & Social Media Analyst; Management Trainee roles in PSUs (Finance, HR, Marketing, Operations)
+
+**Department of Commerce**
+Programs: B.Com.(Hons.), B.Com.(Hons.)+CA, M.Com., Ph.D
+Research areas: Accounting, Finance & Management; Marketing, HRM, Entrepreneurship; E-Commerce, Digital & International Business; Banking, Insurance, Taxation
+Careers: Professor/Lecturer/School Teacher; Accounting & Auditing, Income Tax/Customs, Tax Analyst, GST Consultant; Banking & Insurance; Stock Market; Professional routes — CA/CS/CWA/CMA/CFA
+
+## Note on Programmes
+Ph.D programs are offered in all subjects. All programs are AI-integrated as per NEP-2020, with flexibility such as multiple entry/exit options and freedom to choose electives.istry, Commerce, Computer Science, Economics, Education, English, Mathematics, Physics, Punjabi, Management, Political Science, Zoology and History. The number of seats in each department depends on supervisor availability and specialization.
