@@ -1,40 +1,69 @@
-## Fee structure - UG Sciences and Humanities programmes (tuition fee)
-- B.Sc. (Hons.) Physics, Chemistry, Medical, Non-Medical: Rs 27,500 per semester (Rs 55,000 per year)
-- B.Sc. (Hons.) Mathematics: Rs 30,000 per semester (Rs 60,000 per year)
-- B.A. (Hons.) Economics, Psychology, Social Science, Punjabi: Rs 25,000 per semester (Rs 50,000 per year)
-- B.A. (Hons.) Liberal Arts (Punjabi medium): Rs 25,000 per semester (Rs 50,000 per year)
-- B.A. (Hons.) English: Rs 27,500 per semester (Rs 55,000 per year)
-- Integrated B.A.-B.Ed. (4 years): Rs 40,000 per semester (Rs 80,000 per year)
-Please confirm the final fees with the admission office.
+## University Fee Structure (Session 2026-27) — Source: Official Prospectus 2026-27
 
-## Fee structure - UG Commerce, Management, Computer and Paramedical programmes (tuition fee)
-- B.Com (Hons.): Rs 35,000 per semester (Rs 70,000 per year)
-- B.Com (Hons.) + CA: Rs 40,000 per semester (Rs 80,000 per year)
-- BBA (Hons.) Business Analytics: Rs 42,500 per semester (Rs 85,000 per year)
-- B.Tech (Hons.) CSE (AI-ML, Data Science, Cyber Security): Rs 62,500 per semester (Rs 1,25,000 per year)
-- BCA (Hons.) (AI-ML, Data Analytics, Graphic Design and Web Development): Rs 35,000 per semester (Rs 70,000 per year)
-- Bachelor of Physiotherapy (BPT): Rs 40,000 per semester (Rs 80,000 per year)
-Please confirm the final fees with the admission office.
+All figures are in Indian Rupees (₹), as per the official Akal University Prospectus for session 2026-27. These are University-level charges; please always confirm the final payable amount with the Admission Office before paying, as the University reserves the right to revise fees up to 15% annually.
 
-## Fee structure - PG programmes (tuition fee)
-- M.Sc. (Hons.) Mathematics, Physics, Chemistry, Zoology: Rs 35,000 per semester (Rs 70,000 per year)
-- M.Com (Hons.): Rs 35,000 per semester (Rs 70,000 per year)
-- M.A. (Hons.) Economics, Psychology, History, Political Science, Punjabi, English: Rs 25,000 per semester (Rs 50,000 per year)
-- Master of Computer Applications (MCA): Rs 40,000 per semester (Rs 80,000 per year)
-- PG Diploma in Guidance and Counselling: Rs 17,500 per semester (Rs 35,000 per year)
-- MBA - Data Analytics: Rs 75,000 per semester (Rs 1,50,000 per year)
-Please confirm the final fees with the admission office.
+## One-Time Charges (payable once a year at admission)
+- Prospectus Fee: ₹500 (non-refundable)
+- Admission Fee: ₹5,000 (non-refundable)
 
-## Fee structure - Ph.D. programme
-- Admission charges: Rs 5,000
-- Tuition fee: Rs 40,000 per semester
-- End-semester examination charges: Rs 4,000
-- Thesis submission charges: Rs 10,000
-- Ph.D. application (entrance test) fee: Rs 1,500 (Rs 1,000 for NET-qualified candidates)
-- Hostel and mess, electricity and transport are charged separately (see hostel fees).
-Please confirm the final fees with the admission office.
+## Tuition Fee — Under Graduate Programs (per year, split into Odd Semester due 15.08.2026 and Even Semester due 15.01.2027)
+- B.Sc. – Mathematics: ₹30,000 + ₹30,000 = ₹60,000
+- B.Sc. – Physics: ₹27,500 + ₹27,500 = ₹55,000
+- B.Sc. – Chemistry: ₹27,500 + ₹27,500 = ₹55,000
+- B.Sc. – Medical: ₹27,500 + ₹27,500 = ₹55,000
+- B.Sc. – Non-Medical: ₹27,500 + ₹27,500 = ₹55,000
+- B.Com: ₹35,000 + ₹35,000 = ₹70,000
+- B.Com + C.A: ₹40,000 + ₹40,000 = ₹80,000
+- BBA – Business Analytics: ₹42,500 + ₹42,500 = ₹85,000
+- B.A.-B.Ed (4-Year Integrated ITEP): ₹40,000 + ₹40,000 = ₹80,000
+- B.Tech. (CSE): AI-ML / Data Science / Cyber Security: ₹62,500 + ₹62,500 = ₹1,25,000
+- BCA: AI-ML / Data Analytics / Graphic Design & Web Development: ₹35,000 + ₹35,000 = ₹70,000
+- Bachelor of Physiotherapy (BPT): ₹40,000 + ₹40,000 = ₹80,000
+- B.A. – Economics: ₹25,000 + ₹25,000 = ₹50,000
+- B.A. – Psychology: ₹25,000 + ₹25,000 = ₹50,000
+- B.A. – Social Science: ₹25,000 + ₹25,000 = ₹50,000
+- B.A. – Punjabi: ₹25,000 + ₹25,000 = ₹50,000
+- B.A. (Hons.) – English: ₹27,500 + ₹27,500 = ₹55,000
+- B.A. – Liberal Arts (Punjabi Medium): ₹25,000 + ₹25,000 = ₹50,000
+- B.A. – Sri Guru Granth Sahib Studies: No tuition fee (NIL)
 
-## Fee payment and installments
-Fees are listed per semester and per year. The university website has a Fee Payment page where students select their year and semester.
-The instalment schedule, due dates, refund and cancellation policy are not available in this chatbot. For these, contact the Admission Office on 1800-2020-100 or admission@auts.ac.in.
-The tuition fee listed above is separate from hostel, mess, electricity and transport charges. Scholarship benefits apply on the tuition fee of the selected programme.
+## Tuition Fee — Post Graduate Programs (per year, Odd + Even Semester = Total)
+- M.Sc. – Mathematics: ₹35,000 + ₹35,000 = ₹70,000
+- M.Sc. – Physics: ₹35,000 + ₹35,000 = ₹70,000
+- M.Sc. – Zoology: ₹35,000 + ₹35,000 = ₹70,000
+- M.Sc. – Chemistry: ₹35,000 + ₹35,000 = ₹70,000
+- M.Com: ₹35,000 + ₹35,000 = ₹70,000
+- M.A. – Economics: ₹25,000 + ₹25,000 = ₹50,000
+- M.A. – Psychology: ₹25,000 + ₹25,000 = ₹50,000
+- M.A. – History: ₹25,000 + ₹25,000 = ₹50,000
+- M.A. – Political Science: ₹25,000 + ₹25,000 = ₹50,000
+- M.A. – Punjabi: ₹25,000 + ₹25,000 = ₹50,000
+- M.A. – English: ₹25,000 + ₹25,000 = ₹50,000
+- Master of Computer Applications (MCA): ₹40,000 + ₹40,000 = ₹80,000
+- MBA – Data Analytics: ₹75,000 + ₹75,000 = ₹1,50,000 (admission via entrance test)
+- PG Diploma in Guidance and Counselling: ₹17,500 + ₹17,500 = ₹35,000
+
+Note: Ph.D. programs are offered in all subjects; Ph.D. fee structure is decided case-by-case — please contact the Admission Office for the exact Ph.D. fee.
+
+## Other Charges (apply on top of tuition, paid every semester/year — see hostel file for hostel-specific charges)
+- Examination Fee: ₹4,000 per semester (Science & Technology programs) / ₹3,500 per semester (Non-Science programs)
+- Life Time Alumni Registration: ₹1,000 (one-time, non-refundable, charged in 1st year only)
+- Annual Medical Insurance: ₹400 per year
+- Electricity (in hostel): charged as per actual consumption
+
+## Late Fee for Semester Fee Payment
+- Up to 15 days late: ₹200
+- Up to 30 days late: ₹500
+- Up to 59 days late: ₹1,000
+- On the 60th day: name struck off the rolls (re-admission with ₹2,000 fee is needed, within 15 days, subject to approval)
+
+## How to Pay
+Official online fee payment link: https://auts.ac.in/facilities/fee-payment/
+For any fee-related query, confirmation, or bank payment details, please contact the Admission Office / Accounts Branch directly — for security reasons this assistant does not share bank account numbers.
+
+## Fee Revision & Refund
+- The University reserves the right to increase fees by up to 15% annually.
+- Fee refunds follow UGC Guidelines.
+- SC/ST students have a separate dropout fee policy as per government norms.
+
+Please always confirm the final, exact fee for your specific program and category with the Admission Office before making any payment — this is an estimate based on the official 2026-27 prospectus and may be revised.-rship benefits apply on the tuition fee of the selected programme.
