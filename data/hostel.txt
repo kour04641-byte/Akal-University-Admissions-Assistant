@@ -1,12 +1,36 @@
 ## Hostel facilities
-Akal University has separate hostels for girls and boys. The hostels are fully furnished and safe, and free from drug abuse.
-Students get nutritious vegetarian food at nominal charges. Wardens look after the hostels, and there is 24x7 security with CCTV cameras.
-Facilities include a hostel mess and canteen, air-conditioned reading rooms, an indoor gaming hall and an outdoor gym in the playground.
+Akal University has separate, fully furnished hostels for girls and boys. The hostels provide a safe and homely environment and are drug-free, with caring wardens and 24x7 security with CCTV cameras.
+Students get nutritious vegetarian food through the hostel mess. Facilities include air-conditioned reading rooms, an indoor gaming hall and an outdoor gym in the playground.
 
-## Hostel and mess fees - AC room vs non-AC (normal) room
-Room rent plus mess charges, per student, in a shared room with a common washroom:
-- Normal (non-AC) shared room: Rs 40,000
-- AC shared room: Rs 45,000
-The university lists hostel and mess charges of about Rs 40,000 to Rs 45,000 per year.
-Electricity is charged as per actual consumption. Transport charges depend on the boarding place.
-Please confirm the final hostel fees, room availability and payment schedule with the admission office.
+## Hostel and Mess Fees (Official, per student, common washroom)
+| Room Type | Odd Semester (due 15.08.2026) | Even Semester (due 15.01.2027) | Total per Year |
+|---|---|---|---|
+| Normal Shared Room (Room Rent + Mess Charges) | Rs 40,000 | Rs 40,000 | Rs 80,000 |
+| AC Shared Room (Room Rent + Mess Charges) | Rs 45,000 | Rs 45,000 | Rs 90,000 |
+These charges are per head, for a shared room with a common washroom. This fee structure applies equally to boys' and girls' hostels, as the University publishes one common hostel fee table for all students.
+Electricity charges are extra, based on actual consumption as per the meter reading.
+
+## Other Compulsory Charges (apply to all students, not just hostellers)
+- Examination Fee: Rs 4,000 per semester for Science/Technology programmes; Rs 3,500 per semester for Non-Science programmes.
+- Life Time Alumni Registration: Rs 1,000 (non-refundable), charged from every 1st year student, one time only.
+- Annual Medical Insurance Charges: Rs 400 per year, charged from every student, for medical insurance cover.
+
+## Important Fee Notes
+- Akal University reserves the right to increase fees by up to 15% every year.
+- Hostel fee due dates: Odd Semester - 15 August; Even Semester - 15 January.
+
+## Late Fee Charges (if hostel/other fees are paid after the due date)
+- Up to 15 days after due date: Rs 200 late fee.
+- Up to 30 days after due date: Rs 500 late fee.
+- Up to 59 days after due date: Rs 1,000 late fee.
+- On the 60th day after due date, the student's name is struck off the rolls and re-registration is required.
+
+## How to pay fees
+Fees (except transport charges) can be paid online at: https://auts.ac.in/facilities/fee-payment/
+For transport fee payment and any payment-related queries, students should contact the Admission Office or Accounts Department directly; please do not share or request bank account details over chat - always use the official payment link or contact the university directly for secure payment instructions.
+
+## Fee Refund Policy
+The amount of fee to be refunded shall be as per UGC (University Grants Commission) Guidelines.
+
+## Fee Policy for SC/ST Students who leave mid-year
+If an SC/ST candidate leaves the University during the academic year and the University has not yet received reimbursement of tuition fee and other charges from the Government of Punjab or Government of India under the Post Matric Scholarship programme, the student will have to pay the full fee and other charges as fixed by the Government of Punjab.
