@@ -1,3 +1,5 @@
+import time
+
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -99,6 +101,184 @@ def render_events_ticker():
         </div>
         """,
         height=50,
+    )
+
+
+def render_voice_input(lang_code):
+    """A floating 🎤 mic button placed just left of st.chat_input's send arrow. On click it listens with
+    the browser's built-in speech recognition (language matched to the current UI language), writes the
+    recognized text into the chat input box, and lets the student review/edit it before pressing send."""
+    speech_lang = {"English": "en-IN", "Hindi": "hi-IN", "Punjabi": "pa-IN"}.get(lang_code, "en-IN")
+    components.html(
+        f"""
+        <button id="akal-mic-btn" style="display:none;">🎤</button>
+        <script>
+        (function() {{
+            var doc = window.parent.document;
+            var speechLang = "{speech_lang}";
+
+            function trySetup(retriesLeft) {{
+                var chatInput = doc.querySelector('[data-testid="stChatInput"]');
+                if (!chatInput) {{
+                    if (retriesLeft > 0) setTimeout(function() {{ trySetup(retriesLeft - 1); }}, 300);
+                    return;
+                }}
+
+                var btn = doc.getElementById('akal-mic-btn-clone');
+                if (!btn) {{
+                    btn = document.getElementById('akal-mic-btn').cloneNode(true);
+                    btn.id = 'akal-mic-btn-clone';
+                    btn.style.display = 'flex';
+                    btn.style.position = 'fixed';
+                    btn.style.width = '36px';
+                    btn.style.height = '36px';
+                    btn.style.borderRadius = '50%';
+                    btn.style.border = 'none';
+                    btn.style.background = '#e63946';
+                    btn.style.color = '#fff';
+                    btn.style.fontSize = '16px';
+                    btn.style.alignItems = 'center';
+                    btn.style.justifyContent = 'center';
+                    btn.style.cursor = 'pointer';
+                    btn.style.zIndex = '999999';
+                    btn.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
+                    doc.body.appendChild(btn);
+                }}
+
+                function positionBtn() {{
+                    var rect = chatInput.getBoundingClientRect();
+                    btn.style.top = (rect.top + rect.height / 2 - 18) + 'px';
+                    btn.style.left = (rect.right - 100) + 'px';
+                }}
+                positionBtn();
+                if (!window.__akalMicResizeBound) {{
+                    window.parent.addEventListener('resize', positionBtn);
+                    window.__akalMicResizeBound = true;
+                }}
+                if (window.__akalMicPositionInterval) clearInterval(window.__akalMicPositionInterval);
+                window.__akalMicPositionInterval = setInterval(positionBtn, 1000);
+
+                var Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+                if (!Recognition) {{
+                    btn.title = "Voice input is not supported in this browser";
+                    btn.style.opacity = '0.4';
+                    return;
+                }}
+                var recognition = new Recognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                var listening = false;
+
+                btn.onclick = function() {{
+                    if (listening) {{ recognition.stop(); return; }}
+                    recognition.lang = speechLang;
+                    try {{ recognition.start(); }} catch (e) {{}}
+                }};
+                recognition.onstart = function() {{
+                    listening = true;
+                    btn.style.background = '#2a9d8f';
+                    btn.innerHTML = '●';
+                }};
+                recognition.onend = function() {{
+                    listening = false;
+                    btn.style.background = '#e63946';
+                    btn.innerHTML = '🎤';
+                }};
+                recognition.onerror = function() {{
+                    listening = false;
+                    btn.style.background = '#e63946';
+                    btn.innerHTML = '🎤';
+                }};
+                recognition.onresult = function(event) {{
+                    var text = event.results[0][0].transcript;
+                    var textarea = chatInput.querySelector('textarea');
+                    if (!textarea) return;
+                    var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
+                    nativeSetter.call(textarea, text);
+                    textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    textarea.focus();
+                }};
+            }}
+            trySetup(20);
+        }})();
+        </script>
+        """,
+        height=0,
+    )
+
+
+def scroll_chat_to_bottom(follow):
+    """Scrolls the chat down to the newest message.
+
+    follow=True  -> call it as soon as a question is sent: jumps to the bottom at once and keeps following
+                    the answer while it is being written. It stops following the moment the student
+                    scrolls, clicks or presses a key, so someone reading can still read in peace.
+    follow=False -> call it when the answer is complete: one last jump to the bottom (skipped if the
+                    student scrolled away while the answer was being written).
+
+    Why scrolling failed before: the page only scrolled by itself while the student was already at the
+    very bottom. This helper finds whichever container really scrolls (it differs between Streamlit
+    versions) and the HTML below contains a number that is different on EVERY run, so the browser
+    always reloads and re-runs the script instead of silently reusing the previous run's copy."""
+    components.html(
+        f"""
+        <!-- run {time.time_ns()} -->
+        <script>
+        (function() {{
+            var win = window.parent, doc = win.document;
+            var FOLLOW = {"true" if follow else "false"};
+
+            function scrollers() {{
+                var found = [];
+                var msgs = doc.querySelectorAll('[data-testid="stChatMessage"]');
+                var node = msgs.length ? msgs[msgs.length - 1] : null;
+                while (node && node !== doc.body) {{
+                    var style = win.getComputedStyle(node);
+                    if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {{
+                        found.push(node);
+                    }}
+                    node = node.parentElement;
+                }}
+                var main = doc.querySelector('[data-testid="stMain"]') || doc.querySelector('section.main');
+                if (main && found.indexOf(main) === -1) found.push(main);
+                if (doc.scrollingElement && found.indexOf(doc.scrollingElement) === -1) found.push(doc.scrollingElement);
+                return found;
+            }}
+
+            function toBottom() {{
+                try {{
+                    var msgs = doc.querySelectorAll('[data-testid="stChatMessage"]');
+                    if (msgs.length) msgs[msgs.length - 1].scrollIntoView({{block: "end"}});
+                }} catch (e) {{}}
+                try {{
+                    scrollers().forEach(function(el) {{ el.scrollTop = el.scrollHeight; }});
+                }} catch (e) {{}}
+            }}
+
+            if (FOLLOW) {{
+                win.__akalFollow = true;
+                var stopFollowing = function() {{ win.__akalFollow = false; }};
+                ['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function(name) {{
+                    doc.addEventListener(name, stopFollowing, {{passive: true, once: true}});
+                }});
+                toBottom();
+                var ticks = 0;
+                var timer = setInterval(function() {{
+                    ticks += 1;
+                    if (win.__akalFollow === false || ticks > 300) {{ clearInterval(timer); return; }}
+                    toBottom();
+                }}, 250);
+            }} else {{
+                if (win.__akalFollow === false) return;
+                toBottom();
+                [150, 400, 800, 1500].forEach(function(ms) {{
+                    setTimeout(function() {{ if (win.__akalFollow !== false) toBottom(); }}, ms);
+                }});
+            }}
+        }})();
+        </script>
+        """,
+        height=0,
     )
 
 
@@ -283,7 +463,11 @@ for m in st.session_state.messages:
 
 prompt = st.chat_input(L["input_placeholder"]) or quick
 
+# Floating mic button (voice typing), positioned just left of the chat input's send arrow.
+render_voice_input(lang_code)
+
 if prompt:
+    scroll_chat_to_bottom(follow=True)  # jump down at once, even if the student had scrolled up
     history = st.session_state.messages[1:]
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -297,13 +481,4 @@ if prompt:
     full_reply = reply + CONTACT_FOOTER
     st.session_state.messages.append({"role": "assistant", "content": full_reply})
 
-    components.html(
-        """
-        <script>
-        var doc = window.parent.document;
-        var mainSection = doc.querySelector('section[data-testid="stMain"]') || doc.querySelector('section.main');
-        if (mainSection) { mainSection.scrollTop = mainSection.scrollHeight; }
-        </script>
-        """,
-        height=0,
-    )
+    scroll_chat_to_bottom(follow=False)
