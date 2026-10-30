@@ -344,6 +344,14 @@ LIST_TRANSPORT_RE = re.compile(
     re.IGNORECASE,
 )
 
+# NEW: a named school / department ("Akal Business School", "School of Commerce", "Department of Physics").
+# "Tell me about <school>" must look in programs.txt - NOT be answered from about.txt (the university overview) only.
+SCHOOL_RE = re.compile(r"\b(schools?|departments?|faculty|faculties|centre|center|institute)\b", re.IGNORECASE)
+ABOUT_UNI_RE = re.compile(
+    r"\b(history|founder|vision|mission|chancellor|vice[- ]chancellor|ugc|approved|recogni[sz]ed|located|location)\b",
+    re.IGNORECASE,
+)
+
 BROAD_INSTRUCTION = (
     "\n\n## Full Listing Mode\n"
     "The student wants a complete list. The Context above contains the full official data. Include EVERY "
@@ -373,6 +381,11 @@ def _files_for(query, ctx_query=None, entity_files=()):
     list_programs = cur_prog and not cur_fee and (wide or bool(OFFER_RE.search(q)))
     topics = [name for pattern, name in TOPIC_FILES if pattern.search(ctx)]
     topics += [f for f in entity_files if f not in topics]
+    if SCHOOL_RE.search(ctx):  # NEW: a named school / department -> programs.txt, and not only the university overview
+        if "programs.txt" not in topics:
+            topics.append("programs.txt")
+        if not ABOUT_UNI_RE.search(ctx):
+            topics = [t for t in topics if t != "about.txt"]
     specific = bool(set(topics) & SPECIFIC_TOPICS)
     broad = list_programs or (wide and (cur_fee or cur_prog or bool(topics)))
 
@@ -565,6 +578,55 @@ GREETING_RE = re.compile(
 )
 
 
+# =====================================================================================================
+#  NEW: SELF-CORRECTION ("Tell me about eternal sorry Akal Business School")
+#  Students often type a wrong word and fix it in the same sentence ("... eternal sorry Akal ...",
+#  "fees of btech i mean bba"). The marker word (sorry / i mean / my bad / no wait ...) tells us that the
+#  words just BEFORE it were a mistake and the words AFTER it are the real thing. The wrong word(s) are
+#  dropped so the rest of the bot (routing, search, the AI) only ever sees the corrected question.
+# =====================================================================================================
+_CORRECTION_RE = re.compile(
+    r"(?:^|(?<=[\s,;:.\-–—(]))"
+    r"(sorry+|sry|soory|sorri|i\s+mean(?:t)?|no\s*,?\s*wait|wait\s*,?\s*no|my\s+bad|oops+|"
+    r"mera\s+matlab|मेरा\s+मतलब|सॉरी|माफ़\s*करना|माफ\s*करना|ਮੇਰਾ\s+ਮਤਲਬ)"
+    r"(?=$|[\s,;:.!?\-–—)])",
+    re.IGNORECASE,
+)
+# words that belong to the "frame" of a question (not the mistaken name): they are never removed
+_CORRECTION_FRAME = {
+    "tell", "me", "about", "what", "whats", "what's", "is", "are", "the", "fee", "fees", "of", "for", "in", "at",
+    "on", "to", "and", "a", "an", "please", "pls", "plz", "hi", "hello", "hey", "give", "show", "share", "details",
+    "detail", "info", "information", "regarding", "i", "i'm", "im", "am", "want", "need", "know", "can", "you",
+    "how", "much", "does", "do", "kya", "hai", "ka", "ki", "ke", "batao", "bataiye", "bataao", "mujhe", "tuition",
+    "cost", "admission", "programme", "program", "course", "courses", "hostel", "scholarship", "transport",
+    "eligibility", "apply", "so", "very", "really", "but", "just", "sir", "madam", "mam", "sorry", "which", "where",
+    "when", "who", "why", "this", "that", "my", "your", "our", "with", "from", "any", "all", "list", "complete",
+}
+
+
+def _fix_self_correction(text):
+    """'Tell me about eternal sorry Akal Business School' -> 'Tell me about Akal Business School'.
+    Text without a correction marker comes back unchanged."""
+    if not text or len(text) > 400:
+        return text
+    for _ in range(3):
+        m = _CORRECTION_RE.search(text)
+        if not m:
+            break
+        before = text[:m.start(1)].strip(" ,;:.-–—(")
+        after = text[m.end(1):].strip(" ,;:.-–—)")
+        before_words, after_words = before.split(), after.split()
+        if not after_words or not before_words or len(after_words) > 6:
+            text = (before + " " + after).strip()  # a plain apology: just drop the marker word
+            continue
+        removed = 0
+        while before_words and removed < 4 and re.sub(r"[^\w']", "", before_words[-1].lower()) not in _CORRECTION_FRAME:
+            before_words.pop()  # the wrong word(s) typed right before the marker
+            removed += 1
+        text = " ".join(before_words + after_words)
+    return text.strip() or text
+
+
 # ---------------- History + cache ----------------
 FOOTER_MARK = "\n\n---\n📞"
 MAX_HISTORY_MESSAGES = 6
@@ -576,6 +638,8 @@ def _clean_history(history):
     cleaned = []
     for m in history[-MAX_HISTORY_MESSAGES:]:
         text = strip_br(m["content"].split(FOOTER_MARK)[0]).strip()
+        if m["role"] == "user":
+            text = _fix_self_correction(text)  # the AI should see the corrected question, not the typo
         if len(text) > MAX_HISTORY_CHARS:
             text = text[:MAX_HISTORY_CHARS] + " ..."
         cleaned.append({"role": m["role"], "content": text})
@@ -834,6 +898,293 @@ def _tablify(text):
         out.append("\n".join(lines))
     flush()
     return "\n\n".join(out)
+
+
+# =====================================================================================================
+#  NEW: FEE LOOKUP ENGINE  (the same fee is now ALWAYS shown, however the question is worded)
+#
+#  PROBLEM that was fixed: for one wording of the question the bot printed the real fees.txt table
+#  (M.Com = Rs 35,000 + 35,000 = 70,000), for another wording the AI only got a trimmed part of the data and
+#  wrote "(Not listed)" for M.Com / MBA / Ph.D. - so the same programme had two different answers.
+#
+#  NOW: data/fees.txt is read ONCE into exact rows (programme, semester 1, semester 2, total). For every
+#  fee question the programmes the student means are found by CODE (degree like M.Com / MBA / B.Sc., and/or
+#  a subject or department word like commerce / management / physics - typos, Hindi words and "(Hons.)"
+#  differences are handled), and then
+#    - a plain fee question          -> the exact rows are shown straight away as a table (no AI = no mistake)
+#    - fee + something else          -> the exact rows are put FIRST into the AI's data and can never be
+#                                       trimmed away, so the AI cannot say "not listed" for a row that exists.
+#  A programme whose row truly does not exist in fees.txt is reported honestly (never an invented number).
+# =====================================================================================================
+_DEGREE_RE = re.compile(
+    r"(?<![\w'’])(ph\.?\s?d|b\.?\s?tech|m\.?\s?tech|b\.?\s?sc|m\.?\s?sc|b\.?\s?com|m\.?\s?com|bba|mba|bca|mca|"
+    r"b\.\s?ed|m\.\s?ed|b\.?\s?p\.?\s?t|b\.?\s?voc|m\.?\s?voc|b\.\s?a|m\.\s?a|llb|llm|diploma)(?![a-z])",
+    re.IGNORECASE,
+)
+_DEGREE_LABEL = {
+    "phd": "Ph.D.", "mba": "MBA", "bba": "BBA", "bca": "BCA", "mca": "MCA", "bcom": "B.Com", "mcom": "M.Com",
+    "btech": "B.Tech.", "mtech": "M.Tech.", "bsc": "B.Sc.", "msc": "M.Sc.", "bed": "B.Ed.", "med": "M.Ed.",
+    "ba": "B.A.", "ma": "M.A.", "bpt": "BPT", "llb": "LLB", "llm": "LLM", "diploma": "Diploma",
+    "bvoc": "B.Voc.", "mvoc": "M.Voc.",
+}
+# words that also identify a programme through its degree ("commerce" -> B.Com / M.Com / Ph.D. Commerce, ...)
+_DEGREE_HINTS = {
+    "bcom": {"commerce"}, "mcom": {"commerce"},
+    "bba": {"business", "management"}, "mba": {"business", "management"},
+    "bca": {"computer", "applications", "application"}, "mca": {"computer", "applications", "application"},
+    "btech": {"engineering", "technology", "computer", "cse"}, "mtech": {"engineering", "technology"},
+    "bpt": {"physiotherapy", "physiotherapist"}, "bed": {"education", "teaching"}, "med": {"education", "teaching"},
+    "phd": {"doctoral", "doctorate", "research"}, "llb": {"law"}, "llm": {"law"},
+}
+_FEE_NOISE = {"hons", "hon", "honours", "honors", "and", "the", "with", "for", "from", "per", "year", "years",
+              "semester", "odd", "even", "total", "one", "time"}
+_FEE_QUERY_STOP = {
+    "fee", "fees", "feee", "tuition", "cost", "costs", "price", "prices", "charges", "charge", "amount", "payment",
+    "kitni", "kitna", "kitne", "kya", "hai", "hain", "ka", "ki", "ke", "ko", "mein", "main", "batao", "bataiye",
+    "bataao", "tell", "about", "what", "whats", "which", "how", "much", "the", "and", "for", "are", "you", "your",
+    "with", "can", "please", "give", "show", "list", "all", "per", "year", "annual", "yearly", "semester",
+    "semesters", "odd", "even", "total", "programme", "programmes", "program", "programs", "course", "courses",
+    "degree", "degrees", "school", "schools", "department", "departments", "faculty", "university", "akal",
+    "college", "admission", "session", "academic", "want", "know", "need", "details", "detail", "info",
+    "information", "get", "does", "have", "has", "will", "would", "this", "that", "there", "here", "from", "also",
+    "only", "both", "each", "other", "any", "some", "more", "than", "into", "over", "under", "post", "graduate",
+    "graduates", "undergraduate", "postgraduate", "masters", "master", "bachelor", "bachelors", "regular", "full",
+    "time", "rupees", "rupee", "pls", "plz", "hello", "mujhe", "apna", "meri", "mera", "sorry", "wise", "tell",
+    "structure", "chart", "table", "one", "time", "hons", "hon", "honours", "honors", "new", "fresh", "required",
+}
+_TOKEN_ALIASES = {"maths": "mathematics", "math": "mathematics", "bio": "biotechnology", "biotech": "biotechnology",
+                  "cs": "cse", "computers": "computer", "mgmt": "management", "mgt": "management"}
+# Hindi / Devanagari spellings (the student may type the programme in Hindi)
+_HI_ALIASES = {
+    "एम.कॉम": "m.com", "एमकॉम": "m.com", "बी.कॉम": "b.com", "बीकॉम": "b.com", "एमबीए": "mba", "बीबीए": "bba",
+    "बी.टेक": "b.tech", "बीटेक": "b.tech", "एम.एससी": "m.sc", "बी.एससी": "b.sc", "पी.एच.डी": "ph.d",
+    "पीएचडी": "ph.d", "बीसीए": "bca", "एमसीए": "mca", "कॉमर्स": "commerce", "मैनेजमेंट": "management",
+    "फिजिक्स": "physics", "केमिस्ट्री": "chemistry", "बिजनेस": "business", "कंप्यूटर": "computer",
+    "इंजीनियरिंग": "engineering",
+}
+_PG_WORD_RE = re.compile(r"\b(post[\s-]*graduate|pg|masters?)\b")
+_UG_WORD_RE = re.compile(r"\b(under[\s-]*graduate|ug|bachelors?)\b")
+# a fee question that is ALSO about something else -> the AI answers it (with the exact fee rows in front of it)
+_OTHER_INTENT_RE = re.compile(
+    r"\b(eligib\w*|criteria|duration|syllabus|curriculum|seats?|intake|documents?|apply|application|process|"
+    r"deadline|last date|placement\w*|career\w*|salary|compare|comparison|difference|better|why|about|"
+    r"facilit\w*|scholarship\w*|hostel|transport|bus|van|mess|refund|instal+ments?|pay\w*|link|online)\b",
+    re.IGNORECASE,
+)
+
+_FEE_TEXT = {
+    "English": {
+        "head": ["Programme", "Semester 1", "Semester 2", "Total per Year"],
+        "flat": ["Programme", "Fee"],
+        "levels": {"Undergraduate": "Undergraduate Programs", "Postgraduate": "Postgraduate Programs",
+                   "Ph.D.": "Ph.D. Programs", "Diploma": "Diploma Programs"},
+        "intro": "Here are the tuition fees (per year: Semester 1 + Semester 2 = Total) for the programmes you asked about:",
+    },
+    "Hindi": {
+        "head": ["प्रोग्राम", "सेमेस्टर 1", "सेमेस्टर 2", "कुल (प्रति वर्ष)"],
+        "flat": ["प्रोग्राम", "फीस"],
+        "levels": {"Undergraduate": "अंडरग्रेजुएट प्रोग्राम", "Postgraduate": "पोस्टग्रेजुएट प्रोग्राम",
+                   "Ph.D.": "पीएच.डी. प्रोग्राम", "Diploma": "डिप्लोमा प्रोग्राम"},
+        "intro": "आपके द्वारा पूछे गए प्रोग्राम की ट्यूशन फीस (प्रति वर्ष: सेमेस्टर 1 + सेमेस्टर 2 = कुल) नीचे दी गई है:",
+    },
+    "Punjabi": {
+        "head": ["ਪ੍ਰੋਗਰਾਮ", "ਸਮੈਸਟਰ 1", "ਸਮੈਸਟਰ 2", "ਕੁੱਲ (ਪ੍ਰਤੀ ਸਾਲ)"],
+        "flat": ["ਪ੍ਰੋਗਰਾਮ", "ਫੀਸ"],
+        "levels": {"Undergraduate": "ਅੰਡਰਗ੍ਰੈਜੂਏਟ ਪ੍ਰੋਗਰਾਮ", "Postgraduate": "ਪੋਸਟਗ੍ਰੈਜੂਏਟ ਪ੍ਰੋਗਰਾਮ",
+                   "Ph.D.": "ਪੀਐਚ.ਡੀ. ਪ੍ਰੋਗਰਾਮ", "Diploma": "ਡਿਪਲੋਮਾ ਪ੍ਰੋਗਰਾਮ"},
+        "intro": "ਤੁਹਾਡੇ ਵੱਲੋਂ ਪੁੱਛੇ ਪ੍ਰੋਗਰਾਮਾਂ ਦੀ ਟਿਊਸ਼ਨ ਫੀਸ (ਪ੍ਰਤੀ ਸਾਲ: ਸਮੈਸਟਰ 1 + ਸਮੈਸਟਰ 2 = ਕੁੱਲ) ਹੇਠਾਂ ਹੈ:",
+    },
+}
+
+_FEE_CACHE = {"fp": None, "rows": []}
+
+
+def _fee_words(text):
+    """Meaningful words of a programme name / question (very short words are ignored, except ai, ml, ca)."""
+    return set(re.findall(r"\b(?:[a-z]{3,}|ai|ml|ca)\b", text.lower())) - _FEE_NOISE
+
+
+def _level_of(degree):
+    if degree == "phd":
+        return "Ph.D."
+    if degree == "diploma":
+        return "Diploma"
+    if degree in {"mba", "mca", "mcom", "msc", "mtech", "ma", "med", "llm", "mvoc"}:
+        return "Postgraduate"
+    return "Undergraduate"
+
+
+def _fee_rows():
+    """data/fees.txt -> exact fee rows (re-read automatically when the file changes)."""
+    path = DATA_DIR / "fees.txt"
+    try:
+        fp = path.stat().st_mtime_ns
+    except OSError:
+        return []
+    if _FEE_CACHE["fp"] == fp:
+        return _FEE_CACHE["rows"]
+    rows = []
+    for ln in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not _is_fee_bullet(ln):
+            continue
+        text = _BULLET_RE.match(ln).group(1).replace("**", "")
+        rupee = text.find("₹")
+        colon = text.rfind(":", 0, rupee)
+        if colon != -1:
+            name, detail = text[:colon], text[colon + 1:]
+        else:
+            name, detail = text[:rupee], text[rupee:]
+        name = name.strip(" -–—")
+        dm = _DEGREE_RE.search(name)
+        if not dm:
+            continue  # one-time charges and other non-programme lines are not programme rows
+        degree = re.sub(r"[^a-z]", "", dm.group(1).lower())
+        explicit = _fee_words(_DEGREE_RE.sub(" ", text[:rupee].lower()))
+        sem = _SEM_RE.search(detail)
+        if sem:
+            s1, s2, total = f"₹{sem.group(1)}", f"₹{sem.group(2)}", f"₹{sem.group(3)}"
+            remark = sem.group(4).strip(" .;,")
+        else:
+            s1 = s2 = ""
+            total = detail.strip(" .;,")
+            remark = ""
+        rows.append({
+            "name": name, "degree": degree, "level": _level_of(degree), "explicit": explicit,
+            "tokens": explicit | _DEGREE_HINTS.get(degree, set()),
+            "s1": s1, "s2": s2, "total": total, "remark": remark,
+        })
+    _FEE_CACHE.update(fp=fp, rows=rows)
+    return rows
+
+
+def _fee_match(rows, text):
+    """Which fee rows does the question mean?  Returns (rows, degrees the student named that have NO row)."""
+    if not rows:
+        return [], []
+    low = text.lower()
+    for hi, en in _HI_ALIASES.items():
+        low = low.replace(hi, f" {en} ")
+    degrees = {}
+    for m in _DEGREE_RE.finditer(low):
+        key = re.sub(r"[^a-z]", "", m.group(1))
+        degrees.setdefault(key, _DEGREE_LABEL.get(key, key.upper()))
+
+    vocab = set()
+    for r in rows:
+        vocab |= r["tokens"]
+    vocab_list = sorted(vocab)
+    wanted = set()
+    for tok in _fee_words(_DEGREE_RE.sub(" ", low)):
+        tok = _TOKEN_ALIASES.get(tok, tok)
+        if tok in _FEE_QUERY_STOP:
+            continue
+        if tok not in vocab and len(tok) >= 5:  # spelling mistakes: "comerce", "managment", "fisics"
+            near = difflib.get_close_matches(tok, vocab_list, n=1, cutoff=0.84)
+            tok = near[0] if near else tok
+        if tok in vocab:
+            wanted.add(tok)
+
+    want_level = None
+    if _PG_WORD_RE.search(low):
+        want_level = "Postgraduate"
+    elif _UG_WORD_RE.search(low):
+        want_level = "Undergraduate"
+
+    hits = []
+    if degrees:
+        by_degree = [r for r in rows if r["degree"] in degrees]
+        narrowed = [r for r in by_degree if r["explicit"] & wanted]
+        hits = list(narrowed or by_degree)
+        covered = set()
+        for r in narrowed:
+            covered |= r["explicit"] & wanted
+        leftover = wanted - covered
+        if by_degree and leftover:  # e.g. "BBA and commerce": the subject word also names other programmes
+            seen = {id(r) for r in hits}
+            hits += [r for r in rows if id(r) not in seen and r["tokens"] & leftover]
+    elif wanted:
+        hits = [r for r in rows if r["tokens"] & wanted]
+        if want_level:
+            hits = [r for r in hits if r["level"] == want_level]
+    elif want_level:
+        hits = [r for r in rows if r["level"] == want_level]
+
+    missing = [label for key, label in degrees.items() if not any(r["degree"] == key for r in rows)]
+    return hits[:60], missing
+
+
+def _fee_label(r):
+    return f"{r['name']} *{r['remark']}*" if r["remark"] else r["name"]
+
+
+def _fee_tables(hits, language):
+    """The fee rows as markdown tables, grouped Undergraduate / Postgraduate / Ph.D. / Diploma."""
+    F = _FEE_TEXT.get(language, _FEE_TEXT["English"])
+    groups = {}
+    for r in hits:
+        groups.setdefault(r["level"], []).append(r)
+    ordered = [lv for lv in ("Undergraduate", "Postgraduate", "Ph.D.", "Diploma") if lv in groups]
+    parts = []
+    for lv in ordered:
+        rs = groups[lv]
+        if len(ordered) > 1:
+            parts.append(f"**{F['levels'][lv]}**")
+        sem = [r for r in rs if r["s1"]]
+        flat = [r for r in rs if not r["s1"]]
+        if sem:
+            parts.append(_md_table(F["head"], [(_fee_label(r), r["s1"], r["s2"], r["total"]) for r in sem]))
+        if flat:
+            parts.append(_md_table(F["flat"], [(_fee_label(r), r["total"]) for r in flat]))
+    return "\n\n".join(parts)
+
+
+def _fee_answer(hits, language):
+    F = _FEE_TEXT.get(language, _FEE_TEXT["English"])
+    D = DIRECT_TEXT.get(language, DIRECT_TEXT["English"])
+    return "\n\n".join([F["intro"], _fee_tables(hits, language), D["confirm"], D["apply"].format(url=APPLY_URL)])
+
+
+def _fee_block(hits, missing):
+    """The exact fee rows, put FIRST in the AI's data (small, so it is never trimmed away)."""
+    lines = ["[official-tuition-fee-rows]"]
+    if hits:
+        lines.append(
+            "These are the OFFICIAL tuition fee rows for the programmes the student asked about. Use these exact "
+            "amounts in the answer. Never say a fee is 'not listed' or leave a fee cell empty for any programme "
+            "shown here."
+        )
+        lines.append(_fee_tables(hits, "English"))
+    if missing:
+        lines.append(
+            f"The tuition fee table has NO row for: {', '.join(missing)}. If another part of the data gives their "
+            "fee, use it; otherwise say kindly that you do not have that exact fee right now and offer a callback "
+            "from the admission office. Never invent a number."
+        )
+    return "\n\n".join(lines)
+
+
+def _fee_lookup(query, ctx_query, language):
+    """Returns (block for the AI, direct answer text). At most one of them is filled."""
+    rows = _fee_rows()
+    if not rows:
+        return "", None
+    hits, missing = _fee_match(rows, query)
+    if not hits and not missing and ctx_query != query:  # short follow-up such as "and for M.Com?"
+        hits, missing = _fee_match(rows, ctx_query)
+    if not hits:
+        return (_fee_block([], missing), None) if missing else ("", None)
+    low = query.lower()
+    pure_fee_question = not (_OTHER_INTENT_RE.search(low) or SPECIFIC_FEE_RE.search(low))
+    if pure_fee_question and not missing:
+        return "", _fee_answer(hits, language)
+    return _fee_block(hits, missing), None
+
+
+def fee_data_report():
+    """Prints which programmes were found in data/fees.txt (useful to spot a programme with no fee row)."""
+    rows = _fee_rows()
+    print(f"[fees] {len(rows)} programme fee rows found in data/fees.txt: " + "; ".join(r["name"] for r in rows))
+    return rows
 
 
 # =====================================================================================================
@@ -1127,7 +1478,7 @@ def retrieve(query, k=10):
 
 
 def _build_search_query(query, history):
-    recent_user_msgs = [m["content"] for m in history[-4:] if m.get("role") == "user"]
+    recent_user_msgs = [_fix_self_correction(m["content"]) for m in history[-4:] if m.get("role") == "user"]
     combined = " ".join(recent_user_msgs[-2:] + [query])
     return combined.strip()
 
@@ -1171,7 +1522,9 @@ def _fill_context(blocks, room_tokens, terms):
 
 def prepare(query, history, language="English"):
     history = history or []
-    last_user = next((m["content"] for m in reversed(history) if m.get("role") == "user"), "")
+    # NEW: "Tell me about eternal sorry Akal Business School" -> "Tell me about Akal Business School"
+    query = _fix_self_correction(query)
+    last_user = _fix_self_correction(next((m["content"] for m in reversed(history) if m.get("role") == "user"), ""))
 
     # NEW: negative / doubtful / sceptical question ("it feels like jail", "waste of money", ...)
     negative = bool(NEGATIVE_RE.search(query)) and not GREETING_RE.match(query)
@@ -1211,6 +1564,13 @@ def prepare(query, history, language="English"):
     if transport["mode"] == "direct":
         return _direct_messages(query, transport["direct"], ["transport.txt"])
 
+    # 1b) NEW: fee questions about named programmes / departments -> the exact rows of fees.txt, always the same
+    fee_block = ""
+    if transport["mode"] != "lookup" and not negative and not GREETING_RE.match(query) and FEE_RE.search(ctx_query):
+        fee_block, fee_direct = _fee_lookup(query, ctx_query, language)
+        if fee_direct:
+            return _direct_messages(query, fee_direct, ["fees.txt"])
+
     # 2) "show me everything" questions are answered straight from the data file (as tables)
     direct, direct_sources = (None, [])
     if transport["mode"] != "lookup" and not negative:
@@ -1220,6 +1580,8 @@ def prepare(query, history, language="English"):
 
     # 3) everything else: the AI answers from the relevant data, sized to fit the token budget
     blocks, sources, stems = [], [], set()
+    if fee_block:
+        blocks.append(fee_block)  # first = most important = never trimmed away
     if transport["block"]:
         blocks.append(transport["block"])
         sources.append("transport.txt")
@@ -1544,4 +1906,8 @@ def answer(query, history, language="English"):
 
 
 def warm_up():
+    try:
+        fee_data_report()  # prints which programmes have a fee row in data/fees.txt
+    except Exception as e:
+        print(f"[fees] could not read data/fees.txt: {e}")
     return True
