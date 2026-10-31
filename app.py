@@ -1,4 +1,6 @@
+import html
 import time
+from datetime import datetime, timedelta, timezone
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -17,6 +19,8 @@ from rag_pipeline import(
     warm_up,
 )
 from utils.leads import normalize_phone, save_lead, valid_email
+# NEW: live posts (events / webinars / competitions) from Facebook, Twitter, YouTube, Instagram
+from utils.social_feed import SOURCE_ICON, SOURCE_ORDER, fetch_live_items
 
 st.set_page_config(page_title=f"{UNIVERSITY_NAME} Admissions Assistant", page_icon="🎓", layout="wide")
 
@@ -40,27 +44,44 @@ CONTACT_FOOTER = (
     "✉️ **Dr. Sukhjeet Singh:** sukhjeet_phy@auts.ac.in"
 )
 
-BLOG_URL = "https://blog.auts.ac.in/category/campus-life/clubs/"
+# REMOVED: BLOG_URL and the old hard-coded EVENTS list (they were old information).
+# The blue stripe now shows ONLY live posts read from the official social-media pages.
 
-EVENTS = [
-    "🎤 Independence Day Declamation Competition — 170 students spoke on what freedom means to young voices",
-    "🎨 Rashtriya Sadbhavna Diwas — students turned ideology into art",
-    "🌟 TMTW October — a month of wellness, innovation & compassion",
-    "👁️ Free Eye Awareness & Check-Up Camp by the Red Ribbon Club",
-    "📚 Dr. Manmohan Singh Chair in Development Economics inaugurated",
-    "💻 Empowering Rural Youth Through Innovative Tech Clubs",
-    "🏆 Center for Competitive Examination — giving wings to fly high!",
-    "🩸 Red Ribbon Club — significant participation in aiding humanity",
-    "🤝 NSS — more activities for the betterment of society",
-    "⚛️ Physics Association, Psychology Society, Mathrix Society & more active clubs on campus",
-]
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+@st.cache_data(ttl=900, show_spinner=False)  # the stripe re-reads the social pages every 15 minutes
+def load_live_feed():
+    try:
+        return fetch_live_items()
+    except Exception as e:
+        print(f"[ticker] live feed failed: {e}")
+        return []
 
 
 def render_events_ticker():
-    items_html = "".join(
-        f'<span class="ticker-item">{e}</span><span class="ticker-sep">&nbsp;&nbsp;★&nbsp;&nbsp;</span>'
-        for e in EVENTS
-    )
+    items = load_live_feed()
+    if items:
+        parts = []
+        total_chars = 0
+        for it in items:
+            when = datetime.fromtimestamp(it["ts"], tz=IST).strftime("%d %b %Y")
+            icon = SOURCE_ICON.get(it["source"], "📢")
+            label = f"{icon} {it['source']} · {when} — {it['text']}"
+            total_chars += len(label)
+            parts.append(
+                f'<a class="ticker-item" href="{html.escape(it["url"], quote=True)}" target="_blank" '
+                f'rel="noopener noreferrer">{html.escape(label)}</a>'
+                f'<span class="ticker-sep">&nbsp;&nbsp;★&nbsp;&nbsp;</span>'
+            )
+        items_html = "".join(parts)
+    else:
+        # nothing could be read right now: show a neutral line, never old / invented information
+        text = "📢 Follow our official Facebook, Twitter, YouTube & Instagram pages for the latest events, webinars & competitions"
+        items_html = f'<span class="ticker-item">{html.escape(text)}</span>'
+        total_chars = len(text)
+    duration = max(30, int(total_chars * 0.2))
+
     components.html(
         f"""
         <style>
@@ -76,7 +97,7 @@ def render_events_ticker():
             display: inline-block;
             white-space: nowrap;
             padding-left: 100%;
-            animation: ticker-scroll 45s linear infinite;
+            animation: ticker-scroll {duration}s linear infinite;
           }}
           .ticker-move:hover {{ animation-play-state: paused; }}
           .ticker-item {{
@@ -84,7 +105,9 @@ def render_events_ticker():
             font-size: 15px;
             font-weight: 600;
             font-family: 'Segoe UI', Arial, sans-serif;
+            text-decoration: none;
           }}
+          a.ticker-item:hover {{ text-decoration: underline; }}
           .ticker-sep {{ color: #ffd54f; }}
           @keyframes ticker-scroll {{
             0%   {{ transform: translate3d(0, 0, 0); }}
@@ -98,7 +121,7 @@ def render_events_ticker():
         </style>
         <div class="ticker-wrap">
           <div class="ticker-move">
-            <span class="ticker-label">📢 WHAT'S HAPPENING AT AKAL UNIVERSITY:</span>
+            <span class="ticker-label">📢 LIVE FROM AKAL UNIVERSITY SOCIAL MEDIA:</span>
             {items_html}
           </div>
         </div>
@@ -370,7 +393,7 @@ except ValueError as e:
 # ---------------- Social media bar (Facebook / Twitter / YouTube / Instagram) — very top, top-left ----------------
 render_social_bar()
 
-# ---------------- Events ticker — always shown at the top ----------------
+# ---------------- Live events ticker (from the social media pages) — always shown at the top ----------------
 render_events_ticker()
 
 # ---------------- Step 1: Language selection (shown only once, before chat starts) ----------------
@@ -420,7 +443,7 @@ with st.sidebar:
         st.rerun()
 
     st.link_button(L["apply_label"], APPLY_URL, use_container_width=True)
-    st.link_button("📰 Campus Events & Clubs Blog", BLOG_URL, use_container_width=True)
+    # REMOVED: the "📰 Campus Events & Clubs Blog" button
 
     st.markdown(f"**{L['quick_label']}**")
     quick = None
