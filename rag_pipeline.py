@@ -29,6 +29,13 @@ def _int_env(name, default):
         return default
 
 
+def _float_env(name, default):
+    try:
+        return float(os.environ.get(name, "").strip() or default)
+    except ValueError:
+        return default
+
+
 # ---------------- Settings (all real values pre-filled) ----------------
 UNIVERSITY_NAME = "Akal University"
 APPLY_URL = "https://auts.ac.in/au-online-registration/"
@@ -48,6 +55,10 @@ WEBSITE_URLS = [
     "https://auts.ac.in/au-online-registration/",
     "https://auts.ac.in/contact-us/",
 ]
+# Competitive-exam coaching given by the University. Edit this list if a coaching is added / removed.
+# ALL of these coachings are FREE; accommodation, food and other facilities are paid by the student.
+COACHING_FREE = ["UPSC Civil Services (CSE)", "UGC-CSIR NET", "GATE", "CA"]
+
 # Multi-model fallback CHAIN: when the current model's quota/rate-limit runs out (or it is unavailable),
 # the code automatically shifts to the next one in this list, so the chatbot keeps answering as long as
 # AT LEAST ONE of these models still has quota left.
@@ -66,6 +77,12 @@ NORMAL_MAX_TOKENS = _int_env("NORMAL_MAX_TOKENS", 1500)   # longest normal answe
 LIST_MAX_TOKENS = _int_env("LIST_MAX_TOKENS", 4500)        # longest "complete list" answer
 COMPACT_PROMPT_BELOW = _int_env("COMPACT_PROMPT_BELOW", 9000)  # smaller budgets use the short prompt
 DIRECT_MAX_CHARS = _int_env("DIRECT_MAX_CHARS", 30000)     # biggest file shown straight from the data
+# Low randomness = every student gets the same answer to the same question
+ANSWER_TEMPERATURE = _float_env("ANSWER_TEMPERATURE", 0.2)
+# NEW: typing speed of every answer (characters per second). Lower = slower, easier to read while it types.
+# A very long answer is sped up a little so that it never takes longer than STREAM_MAX_SECONDS.
+STREAM_CHARS_PER_SECOND = _int_env("STREAM_CHARS_PER_SECOND", 150)
+STREAM_MAX_SECONDS = _int_env("STREAM_MAX_SECONDS", 35)
 
 DATA_DIR = BASE_DIR / "data"
 VECTORSTORE_DIR = BASE_DIR / "vectorstore"
@@ -344,7 +361,7 @@ LIST_TRANSPORT_RE = re.compile(
     re.IGNORECASE,
 )
 
-# NEW: a named school / department ("Akal Business School", "School of Commerce", "Department of Physics").
+# A named school / department ("Akal Business School", "School of Commerce", "Department of Physics").
 # "Tell me about <school>" must look in programs.txt - NOT be answered from about.txt (the university overview) only.
 SCHOOL_RE = re.compile(r"\b(schools?|departments?|faculty|faculties|centre|center|institute)\b", re.IGNORECASE)
 ABOUT_UNI_RE = re.compile(
@@ -381,7 +398,7 @@ def _files_for(query, ctx_query=None, entity_files=()):
     list_programs = cur_prog and not cur_fee and (wide or bool(OFFER_RE.search(q)))
     topics = [name for pattern, name in TOPIC_FILES if pattern.search(ctx)]
     topics += [f for f in entity_files if f not in topics]
-    if SCHOOL_RE.search(ctx):  # NEW: a named school / department -> programs.txt, and not only the university overview
+    if SCHOOL_RE.search(ctx):  # a named school / department -> programs.txt, and not only the university overview
         if "programs.txt" not in topics:
             topics.append("programs.txt")
         if not ABOUT_UNI_RE.search(ctx):
@@ -579,7 +596,242 @@ GREETING_RE = re.compile(
 
 
 # =====================================================================================================
-#  NEW: SELF-CORRECTION ("Tell me about eternal sorry Akal Business School")
+#  COACHING (UPSC / UGC-CSIR NET / GATE / CA) and "CA" = B.Com (Hons.) + CA
+#
+#  PROBLEM that was fixed: "upsc fees" printed the WHOLE university fee table, "tell me about UPSC" was
+#  answered by one person and "not offered" for another, and "CA" alone found nothing (the programme is named
+#  "B.Com (Hons.) + CA").
+#
+#  NOW: whatever way the student words it (UPSC, UPSC CSE, civil services, IAS, UGC NET, CSIR, JRF, GATE,
+#  coaching, competitive exams, CA, chartered accountant, Hindi spellings ...), the code itself
+#    1. recognises the topic,
+#    2. for a plain question ("upsc", "upsc fees", "tell me about CA", "is NET coaching free") builds the
+#       ANSWER ITSELF from the official facts - so EVERY student gets EXACTLY the same answer, no AI wording
+#       differences and no chance of "not offered":
+#          coaching = FREE, rooms / food / everything else = PAID,
+#          CA = the programme B.Com (Hons.) + CA with its exact fee row from fees.txt,
+#          + every paragraph about the exam found in ANY data file (the file name does not matter),
+#    3. for a question that also asks something else (hostel, eligibility, ...) the AI answers, with the
+#       official facts placed FIRST in its data.
+# =====================================================================================================
+_NB = r"(?<![a-z0-9])"
+_NA = r"(?![a-z0-9])"
+COACHING_RE = re.compile(
+    _NB + r"(?:"
+    r"upsc(?:[\s/&-]*(?:cse|csr|civil\s+services?))?|u\.\s?p\.\s?s\.\s?c\.?|"
+    r"civil\s+services?(?:\s+exam\w*)?|ias|ips|"
+    r"ugc[\s-]*(?:csir[\s-]*)?net|csir[\s-]*(?:ugc[\s-]*)?net|net[\s/&-]*jrf|jrf|csir|"
+    r"net\s+(?:exam\w*|preparation|classes)|"
+    r"gate(?:\s+(?:exam\w*|coaching|preparation|classes))?|"
+    r"coachings?|competitive\s+exams?|exam\s+preparation|"
+    r"chartered\s+accountan\w*|ca\s+(?:coaching|foundation|inter|final|course|exam\w*)|"
+    r"cse\s+(?:exam\w*|coaching|preparation)"
+    r")" + _NA +
+    r"|यूपीएससी|सिविल\s*सर्विस\w*|कोचिंग|यू\.?जी\.?सी\.?\s*नेट|सीएसआईआर|नेट\s*जेआरएफ|जेआरएफ|"
+    r"गेट\s*(?:परीक्षा|कोचिंग)|चार्टर्ड",
+    re.IGNORECASE,
+)
+# "CA" on its own (and its spellings) -> the programme "B.Com (Hons.) + CA"
+CA_RE = re.compile(
+    r"(?<![a-z0-9.])(?:ca|c\.\s?a\.?)(?![a-z0-9])|chartered\s+accountan\w*|सीए(?![\u0900-\u097f])|सी\.\s?ए\.?|चार्टर्ड",
+    re.IGNORECASE,
+)
+_GATE_PLACE_RE = re.compile(
+    r"\b(main|campus|college|university|hostel|entry|exit|front|back)\s+gate\b|\bgate\s+(timings?|pass|number|no)\b",
+    re.IGNORECASE,
+)
+_CA_PARA_RE = re.compile(r"\+\s*ca(?![a-z])|chartered", re.IGNORECASE)
+# which exam does the student mean?  (key -> pattern used on the QUESTION)
+_UPSC_RE = re.compile(
+    r"upsc|u\.\s?p\.\s?s\.\s?c|civil\s+services?|(?<![a-z])(?:ias|ips)(?![a-z])|यूपीएससी|सिविल\s*सर्विस",
+    re.IGNORECASE,
+)
+_NET_RE = re.compile(
+    r"ugc[\s-]*(?:csir[\s-]*)?net|csir|jrf|(?<![a-z])net\s+(?:coaching|exam\w*|preparation|classes|jrf)|"
+    r"सीएसआईआर|जेआरएफ|यू\.?जी\.?सी\.?\s*नेट",
+    re.IGNORECASE,
+)
+_GATE_RE = re.compile(r"(?<![a-z])gate(?![a-z])|गेट\s*(?:परीक्षा|कोचिंग)", re.IGNORECASE)
+_EXAM_RES = [("upsc", _UPSC_RE), ("net", _NET_RE), ("gate", _GATE_RE), ("ca", CA_RE)]
+_EXAM_PARA_RES = {"upsc": _UPSC_RE, "net": _NET_RE, "gate": _GATE_RE, "ca": _CA_PARA_RE}
+_EXAM_KEY = {"upsc": r"upsc|civil", "net": r"\bnet\b|csir|ugc", "gate": r"\bgate\b", "ca": r"\bca\b|chartered"}
+# a coaching question that ALSO asks something else -> the AI answers it (with the official facts in front of it)
+_COACHING_OTHER_RE = re.compile(
+    r"\b(eligib\w*|criteria|duration|syllabus|curriculum|seats?|documents?|apply|application|process|deadline|"
+    r"last date|placement\w*|salary|compare|comparison|difference|hostel|transport|bus|van|mess|refund|"
+    r"instal+ments?|pay\w*|link|online|offline|timings?|batch\w*|faculty|teachers?|schedule|mode|"
+    r"how long|when|where|scholarship\w*)\b",
+    re.IGNORECASE,
+)
+_TOPIC_CACHE = {"fp": None, "items": []}
+
+_COACH_TEXT = {
+    "English": {
+        "yes": "Yes! Coaching for {exams} is available at Akal University, and the coaching is completely **FREE**.",
+        "all": "Akal University provides **FREE** coaching for these competitive exams: {exams}.",
+        "ca_prog": "For CA (Chartered Accountancy), the University offers the integrated **B.Com (Hons.) + CA** programme. Its tuition fee:",
+        "details": "**More details:**",
+        "paid": "Please note: only the coaching is free. Accommodation / hostel, food and all other facilities are paid by the student.",
+    },
+    "Hindi": {
+        "yes": "जी हाँ! अकाल यूनिवर्सिटी में {exams} की कोचिंग उपलब्ध है, और यह कोचिंग बिल्कुल **मुफ़्त** है।",
+        "all": "अकाल यूनिवर्सिटी इन प्रतियोगी परीक्षाओं की **मुफ़्त** कोचिंग देती है: {exams}।",
+        "ca_prog": "CA (चार्टर्ड अकाउंटेंसी) के लिए यूनिवर्सिटी **B.Com (Hons.) + CA** प्रोग्राम ऑफर करती है। इसकी ट्यूशन फीस:",
+        "details": "**और जानकारी:**",
+        "paid": "ध्यान दें: सिर्फ़ कोचिंग मुफ़्त है। रहना (हॉस्टल), खाना और बाकी सभी सुविधाओं का शुल्क विद्यार्थी को देना होता है।",
+    },
+    "Punjabi": {
+        "yes": "ਜੀ ਹਾਂ! ਅਕਾਲ ਯੂਨੀਵਰਸਿਟੀ ਵਿੱਚ {exams} ਦੀ ਕੋਚਿੰਗ ਉਪਲਬਧ ਹੈ, ਅਤੇ ਇਹ ਕੋਚਿੰਗ ਬਿਲਕੁਲ **ਮੁਫ਼ਤ** ਹੈ।",
+        "all": "ਅਕਾਲ ਯੂਨੀਵਰਸਿਟੀ ਇਨ੍ਹਾਂ ਮੁਕਾਬਲੇ ਦੀਆਂ ਪ੍ਰੀਖਿਆਵਾਂ ਦੀ **ਮੁਫ਼ਤ** ਕੋਚਿੰਗ ਦਿੰਦੀ ਹੈ: {exams}।",
+        "ca_prog": "CA (ਚਾਰਟਰਡ ਅਕਾਊਂਟੈਂਸੀ) ਲਈ ਯੂਨੀਵਰਸਿਟੀ **B.Com (Hons.) + CA** ਪ੍ਰੋਗਰਾਮ ਪੇਸ਼ ਕਰਦੀ ਹੈ। ਇਸ ਦੀ ਟਿਊਸ਼ਨ ਫੀਸ:",
+        "details": "**ਹੋਰ ਜਾਣਕਾਰੀ:**",
+        "paid": "ਧਿਆਨ ਦਿਓ: ਸਿਰਫ਼ ਕੋਚਿੰਗ ਮੁਫ਼ਤ ਹੈ। ਰਿਹਾਇਸ਼ (ਹੋਸਟਲ), ਖਾਣਾ ਅਤੇ ਬਾਕੀ ਸਾਰੀਆਂ ਸਹੂਲਤਾਂ ਦਾ ਖਰਚਾ ਵਿਦਿਆਰਥੀ ਨੂੰ ਦੇਣਾ ਹੁੰਦਾ ਹੈ।",
+    },
+}
+
+
+def _coaching_hit(text):
+    """True when the question is about UPSC / NET / GATE / CA coaching (any wording)."""
+    return bool(COACHING_RE.search(_GATE_PLACE_RE.sub(" ", (text or "").lower())))
+
+
+def _strip_coaching(text):
+    """The question without the coaching words, so e.g. 'UPSC CSE' is not mistaken for the B.Tech CSE fee row."""
+    return COACHING_RE.sub(" ", _GATE_PLACE_RE.sub(" ", (text or "").lower()))
+
+
+def _topic_line(text):
+    return _coaching_hit(text) or bool(_CA_PARA_RE.search(text.lower()))
+
+
+def _topic_paragraphs():
+    """[(file name, paragraph)] about coaching / CA found in ANY data file (the file name does not matter)."""
+    fp = _data_fingerprint()
+    if _TOPIC_CACHE["fp"] == fp:
+        return _TOPIC_CACHE["items"]
+    items, seen = [], set()
+    paths = sorted(DATA_DIR.glob("*.txt"), key=lambda p: (p.name.lower().startswith("website"), p.name))
+    for path in paths:
+        if path.name.lower() in ("fees.txt", "transport.txt"):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for para in re.split(r"\n\s*\n", _safe_text(text)):
+            para = para.strip()
+            if not para:
+                continue
+            if len(para) > 1200:  # a long list: keep only the lines about the topic
+                para = "\n".join(ln for ln in para.splitlines() if _topic_line(ln))
+                if not para:
+                    continue
+            elif not _topic_line(para):
+                continue
+            if para in seen:
+                continue
+            seen.add(para)
+            items.append((path.name, para))
+    _TOPIC_CACHE.update(fp=fp, items=items)
+    return items
+
+
+def _coaching_paragraphs(max_chars=3500):
+    """The topic paragraphs as one text (with the file name) for the AI's data."""
+    found, size = [], 0
+    for name, para in _topic_paragraphs():
+        item = f"[{name}]\n{para}"
+        if size + len(item) > max_chars:
+            break
+        found.append(item)
+        size += len(item)
+    return "\n\n".join(found)
+
+
+def _coaching_block():
+    """Official facts about the coaching (first in the AI's data, never trimmed away)."""
+    lines = [
+        "[coaching-official-facts]",
+        f"{UNIVERSITY_NAME} provides coaching for these competitive examinations: {', '.join(COACHING_FREE)}. "
+        "ALL of this coaching is FREE for students (there is no coaching fee at all). Everything else - "
+        "accommodation / hostel, food / mess, transport and similar facilities - is PAID by the student.",
+        "Never say that this coaching is not offered, and never say you have no information about it. Answer "
+        "fully: what coaching is given, that the coaching is free, that stay and food are paid, and any extra "
+        "detail found below.",
+        "'CA' means Chartered Accountancy. The University's CA programme is 'B.Com (Hons.) + CA'. Whenever the "
+        "student mentions CA, answer about this programme (its details and its tuition fee from the official fee "
+        "rows, if shown) and also mention that CA coaching is free.",
+    ]
+    extra = _coaching_paragraphs()
+    if extra:
+        lines.append("More details found in the University's data:\n" + extra)
+    return "\n\n".join(lines)
+
+
+def _exam_label(key):
+    for entry in COACHING_FREE:
+        if re.search(_EXAM_KEY[key], entry.lower()):
+            return entry
+    return None
+
+
+def _coaching_exams(text):
+    """[(key, label)] of the exams the question names: upsc / net / gate / ca (only those the University offers)."""
+    low = _GATE_PLACE_RE.sub(" ", (text or "").lower())
+    out = []
+    for key, rx in _EXAM_RES:
+        if rx.search(low):
+            label = _exam_label(key)
+            if label:
+                out.append((key, label))
+    return out
+
+
+def _coaching_direct_answer(exam_text, language):
+    """The complete, always-identical answer to a plain UPSC / NET / GATE / CA question (no AI involved)."""
+    C = _COACH_TEXT.get(language, _COACH_TEXT["English"])
+    D = DIRECT_TEXT.get(language, DIRECT_TEXT["English"])
+    exams = _coaching_exams(exam_text)
+    keys = {k for k, _ in exams}
+    ca_rows = _ca_fee_rows() if "ca" in keys else []
+
+    parts = []
+    if exams:
+        parts.append(C["yes"].format(exams=", ".join(label for _, label in exams)))
+    else:
+        parts.append(C["all"].format(exams=", ".join(COACHING_FREE)))
+    if "ca" in keys:
+        parts.append(C["ca_prog"])
+        if ca_rows:
+            parts.append(_fee_tables(ca_rows, language))
+
+    items = _topic_paragraphs()
+    if keys:
+        chosen = [p for _, p in items
+                  if any(_EXAM_PARA_RES[k].search(_GATE_PLACE_RE.sub(" ", p.lower())) for k in keys)]
+        if not chosen:
+            chosen = [p for _, p in items if "coaching" in p.lower()][:2]
+    else:
+        chosen = [p for _, p in items]
+    picked, size = [], 0
+    for p in chosen:
+        if size + len(p) > 3000:
+            break
+        picked.append(p)
+        size += len(p)
+    body = _tablify(_safe_text("\n\n".join(picked))) if picked else ""
+    if body:
+        parts += [C["details"], body]
+
+    parts.append(C["paid"])
+    if ca_rows:
+        parts.append(D["confirm"])
+    parts.append(D["apply"].format(url=APPLY_URL))
+    return "\n\n".join(parts)
+
+
+# =====================================================================================================
+#  SELF-CORRECTION ("Tell me about eternal sorry Akal Business School")
 #  Students often type a wrong word and fix it in the same sentence ("... eternal sorry Akal ...",
 #  "fees of btech i mean bba"). The marker word (sorry / i mean / my bad / no wait ...) tells us that the
 #  words just BEFORE it were a mistake and the words AFTER it are the real thing. The wrong word(s) are
@@ -652,10 +904,11 @@ _ANSWER_CACHE = {}
 
 
 class _Messages(list):
-    """A normal message list that also carries: cache_key, max_tokens, fit(budget), direct_answer."""
+    """A normal message list that also carries: cache_key, max_tokens, temperature, fit(budget), direct_answer."""
 
     cache_key = None
     max_tokens = None
+    temperature = None
     fit = None
     direct_answer = None
 
@@ -901,13 +1154,9 @@ def _tablify(text):
 
 
 # =====================================================================================================
-#  NEW: FEE LOOKUP ENGINE  (the same fee is now ALWAYS shown, however the question is worded)
+#  FEE LOOKUP ENGINE  (the same fee is ALWAYS shown, however the question is worded)
 #
-#  PROBLEM that was fixed: for one wording of the question the bot printed the real fees.txt table
-#  (M.Com = Rs 35,000 + 35,000 = 70,000), for another wording the AI only got a trimmed part of the data and
-#  wrote "(Not listed)" for M.Com / MBA / Ph.D. - so the same programme had two different answers.
-#
-#  NOW: data/fees.txt is read ONCE into exact rows (programme, semester 1, semester 2, total). For every
+#  data/fees.txt is read ONCE into exact rows (programme, semester 1, semester 2, total). For every
 #  fee question the programmes the student means are found by CODE (degree like M.Com / MBA / B.Sc., and/or
 #  a subject or department word like commerce / management / physics - typos, Hindi words and "(Hons.)"
 #  differences are handled), and then
@@ -915,6 +1164,7 @@ def _tablify(text):
 #    - fee + something else          -> the exact rows are put FIRST into the AI's data and can never be
 #                                       trimmed away, so the AI cannot say "not listed" for a row that exists.
 #  A programme whose row truly does not exist in fees.txt is reported honestly (never an invented number).
+#  "CA" / "chartered accountant" is understood as the programme "B.Com (Hons.) + CA".
 # =====================================================================================================
 _DEGREE_RE = re.compile(
     r"(?<![\w'’])(ph\.?\s?d|b\.?\s?tech|m\.?\s?tech|b\.?\s?sc|m\.?\s?sc|b\.?\s?com|m\.?\s?com|bba|mba|bca|mca|"
@@ -1057,6 +1307,11 @@ def _fee_rows():
     return rows
 
 
+def _ca_fee_rows():
+    """The row(s) of the CA programme = 'B.Com (Hons.) + CA' in fees.txt."""
+    return [r for r in _fee_rows() if r["degree"] == "bcom" and "ca" in r["explicit"]]
+
+
 def _fee_match(rows, text):
     """Which fee rows does the question mean?  Returns (rows, degrees the student named that have NO row)."""
     if not rows:
@@ -1064,6 +1319,8 @@ def _fee_match(rows, text):
     low = text.lower()
     for hi, en in _HI_ALIASES.items():
         low = low.replace(hi, f" {en} ")
+    low = re.sub(r"सीए(?![\u0900-\u097f])", " ca ", low)          # CA in Hindi
+    low = re.sub(r"chartered\s+accountan\w*", " ca ", low)         # chartered accountant = CA
     degrees = {}
     for m in _DEGREE_RE.finditer(low):
         key = re.sub(r"[^a-z]", "", m.group(1))
@@ -1163,8 +1420,9 @@ def _fee_block(hits, missing):
     return "\n\n".join(lines)
 
 
-def _fee_lookup(query, ctx_query, language):
-    """Returns (block for the AI, direct answer text). At most one of them is filled."""
+def _fee_lookup(query, ctx_query, language, force_block=False):
+    """Returns (block for the AI, direct answer text). At most one of them is filled.
+    force_block=True (coaching / CA questions): never answer directly, the AI must also mention the coaching."""
     rows = _fee_rows()
     if not rows:
         return "", None
@@ -1175,7 +1433,7 @@ def _fee_lookup(query, ctx_query, language):
         return (_fee_block([], missing), None) if missing else ("", None)
     low = query.lower()
     pure_fee_question = not (_OTHER_INTENT_RE.search(low) or SPECIFIC_FEE_RE.search(low))
-    if pure_fee_question and not missing:
+    if pure_fee_question and not missing and not force_block:
         return "", _fee_answer(hits, language)
     return _fee_block(hits, missing), None
 
@@ -1522,21 +1780,29 @@ def _fill_context(blocks, room_tokens, terms):
 
 def prepare(query, history, language="English"):
     history = history or []
-    # NEW: "Tell me about eternal sorry Akal Business School" -> "Tell me about Akal Business School"
+    # "Tell me about eternal sorry Akal Business School" -> "Tell me about Akal Business School"
     query = _fix_self_correction(query)
     last_user = _fix_self_correction(next((m["content"] for m in reversed(history) if m.get("role") == "user"), ""))
 
-    # NEW: negative / doubtful / sceptical question ("it feels like jail", "waste of money", ...)
+    # negative / doubtful / sceptical question ("it feels like jail", "waste of money", ...)
     negative = bool(NEGATIVE_RE.search(query)) and not GREETING_RE.match(query)
 
     # a negative question is always standalone: never mix it with the previous question's topic
     ctx_query = query if (negative or len(query.split()) >= 6 or not last_user) else f"{last_user} {query}"
+
+    # coaching (UPSC / NET / GATE / CA ...) and "CA" = the programme B.Com (Hons.) + CA
+    ca_hit = (not negative) and bool(CA_RE.search(ctx_query.lower()))
+    coaching_hit = (not negative) and _coaching_hit(ctx_query)
+    topic_hit = (ca_hit or coaching_hit) and not GREETING_RE.match(query)
+
     if negative:
         extra_terms, entity_files = "", []  # filler words must not route the question to a random file
     else:
         extra_terms, entity_files = _understand(ctx_query)
     base_query = query if negative else _build_search_query(query, history)
     search_query = (base_query + " " + extra_terms).strip()
+    if topic_hit:
+        search_query += " coaching UPSC CSE UGC CSIR NET GATE CA free B.Com Hons CA programme"
     files, broad = _files_for(query, ctx_query, entity_files)
 
     if negative:
@@ -1553,7 +1819,11 @@ def prepare(query, history, language="English"):
             files = [f for f in files if f != "fees.txt"]  # a village's fee is in the van table, not tuition
     if GREETING_RE.match(query):
         files, broad = [], False
+    if ca_hit and "programs.txt" not in files and not GREETING_RE.match(query):
+        files.append("programs.txt")  # the description of the programme B.Com (Hons.) + CA
     terms = _query_terms(f"{ctx_query} {extra_terms}")
+    if topic_hit:
+        terms = terms + ["coaching", "upsc", "csir", "gate", "chartered", "+ ca"]
 
     # 1) transport questions: the complete van table (or one van / one village), built from transport.txt
     transport = {"mode": "off", "direct": None, "block": ""}
@@ -1564,24 +1834,49 @@ def prepare(query, history, language="English"):
     if transport["mode"] == "direct":
         return _direct_messages(query, transport["direct"], ["transport.txt"])
 
-    # 1b) NEW: fee questions about named programmes / departments -> the exact rows of fees.txt, always the same
+    # 1a) NEW: coaching / CA questions
+    if topic_hit and not negative:
+        stripped = _strip_coaching(query)
+        degs = {re.sub(r"[^a-z]", "", m.group(1)) for m in _DEGREE_RE.finditer(stripped)}
+        if ca_hit:
+            degs.discard("bcom")  # "B.Com + CA" is the CA programme itself
+        if not degs:
+            if not _COACHING_OTHER_RE.search(query.lower()):
+                # a plain question ("upsc", "upsc fees", "tell me about CA", "is net coaching free"):
+                # the answer is built by the code itself -> EXACTLY the same for every student
+                exam_text = query if _coaching_exams(query) else ctx_query
+                return _direct_messages(query, _coaching_direct_answer(exam_text, language), ["coaching"])
+            # asks something else as well (hostel, eligibility, ...): the AI answers, but never from the
+            # university-wide fee table
+            files = [f for f in files if f != "fees.txt"]
+
+    # 1b) fee questions about named programmes / departments -> the exact rows of fees.txt, always the same
     fee_block = ""
-    if transport["mode"] != "lookup" and not negative and not GREETING_RE.match(query) and FEE_RE.search(ctx_query):
-        fee_block, fee_direct = _fee_lookup(query, ctx_query, language)
-        if fee_direct:
-            return _direct_messages(query, fee_direct, ["fees.txt"])
+    if transport["mode"] != "lookup" and not negative and not GREETING_RE.match(query):
+        fee_query = _strip_coaching(query) if topic_hit else query  # "UPSC CSE" must not match the B.Tech CSE row
+        fee_ctx = _strip_coaching(ctx_query) if topic_hit else ctx_query
+        if FEE_RE.search(fee_ctx):
+            fee_block, fee_direct = _fee_lookup(fee_query, fee_ctx, language, force_block=topic_hit)
+            if fee_direct:
+                return _direct_messages(query, fee_direct, ["fees.txt"])
+    if ca_hit and not negative and "[official-tuition-fee-rows]" not in fee_block:
+        ca_rows = _ca_fee_rows()  # "CA" = B.Com (Hons.) + CA: always show its exact fee
+        if ca_rows:
+            fee_block = _fee_block(ca_rows, [])
 
     # 2) "show me everything" questions are answered straight from the data file (as tables)
     direct, direct_sources = (None, [])
-    if transport["mode"] != "lookup" and not negative:
+    if transport["mode"] != "lookup" and not negative and not topic_hit:
         direct, direct_sources = _direct_list_answer(query, ctx_query, files, entity_files, language)
     if direct:
         return _direct_messages(query, direct, direct_sources)
 
     # 3) everything else: the AI answers from the relevant data, sized to fit the token budget
     blocks, sources, stems = [], [], set()
+    if topic_hit:
+        blocks.append(_coaching_block())  # official facts first = never trimmed away
     if fee_block:
-        blocks.append(fee_block)  # first = most important = never trimmed away
+        blocks.append(fee_block)
     if transport["block"]:
         blocks.append(transport["block"])
         sources.append("transport.txt")
@@ -1615,7 +1910,8 @@ def prepare(query, history, language="English"):
             blocks.append(strip_br("\n\n".join(d["text"] for d in docs)))
         sources = sorted({d["source"] for d in docs})
     has_listing = bool(blocks) and broad
-    print(f"[prepare] files: {sources} | broad: {broad} | negative: {negative} | transport: {transport['mode']}")
+    print(f"[prepare] files: {sources} | broad: {broad} | negative: {negative} | transport: {transport['mode']} | "
+          f"coaching/CA: {topic_hit}")
 
     def assemble(budget):
         budget = max(int(budget), 2000)
@@ -1638,6 +1934,7 @@ def prepare(query, history, language="English"):
         system_prompt = _render_prompt(template, context, language, has_listing, negative)
         msgs = _Messages([{"role": "system", "content": system_prompt}] + hist + [{"role": "user", "content": query}])
         msgs.max_tokens = out_cap
+        msgs.temperature = ANSWER_TEMPERATURE
         msgs.fit = assemble
         return msgs
 
@@ -1765,7 +2062,10 @@ def _providers():
 
 def _open_stream(provider, model, messages):
     max_tokens = getattr(messages, "max_tokens", None) or NORMAL_MAX_TOKENS
-    common = dict(model=model, messages=list(messages), temperature=0.4, max_tokens=max_tokens, stream=True)
+    temperature = getattr(messages, "temperature", None)
+    if temperature is None:
+        temperature = ANSWER_TEMPERATURE
+    common = dict(model=model, messages=list(messages), temperature=temperature, max_tokens=max_tokens, stream=True)
     if provider == "openai":
         from openai import OpenAI
 
@@ -1867,13 +2167,35 @@ def _generate(messages, state):
     yield _friendly_error(errors[0] if errors else "")
 
 
+# =====================================================================================================
+#  NEW: PACED TYPING
+#  Before, a ready answer (a table, a direct answer, a cached answer) appeared in a few milliseconds and the
+#  page jumped to the end, so the student had to scroll back up to read it. Now EVERY answer is released
+#  at a calm typing speed (STREAM_CHARS_PER_SECOND), so the text grows line by line and can be read while
+#  it is being written. A very long answer is sped up a little so it never takes more than STREAM_MAX_SECONDS.
+# =====================================================================================================
+def _paced(pieces, total_chars=None):
+    cps = max(STREAM_CHARS_PER_SECOND, 20)
+    if total_chars:
+        cps = max(cps, total_chars / max(STREAM_MAX_SECONDS, 5))
+    delay = 0.04
+    step = max(2, int(cps * delay))
+    buf = ""
+    for piece in pieces:
+        buf += piece
+        while len(buf) >= step:
+            yield buf[:step]
+            buf = buf[step:]
+            time.sleep(delay)
+    if buf:
+        yield buf
+
+
 def stream_reply(messages):
     direct = getattr(messages, "direct_answer", None)
     if direct:
         direct = strip_br(direct)
-        for i in range(0, len(direct), 160):
-            yield direct[i : i + 160]
-            time.sleep(0.004)
+        yield from _paced([direct], len(direct))
         return
 
     key = getattr(messages, "cache_key", None)
@@ -1881,16 +2203,18 @@ def stream_reply(messages):
         hit = _ANSWER_CACHE.get(key)
         if hit and time.time() - hit[0] < CACHE_TTL:
             text = strip_br(hit[1])
-            for i in range(0, len(text), 40):
-                yield text[i : i + 40]
-                time.sleep(0.01)
+            yield from _paced([text], len(text))
             return
 
     state = {"ok": False}
     pieces = []
-    for piece in _generate(messages, state):
-        pieces.append(piece)
-        yield piece
+
+    def source():
+        for piece in _generate(messages, state):
+            pieces.append(piece)
+            yield piece
+
+    yield from _paced(source())
 
     if key and state["ok"]:
         text = "".join(pieces).strip()
