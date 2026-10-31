@@ -3,13 +3,16 @@ import time
 import streamlit as st
 import streamlit.components.v1 as components
 
-from rag_pipeline import (
+# CHANGED: import from rag_pipeline_v4 (the new file), plus OFFICIAL_WEBSITE_URL and render_social_bar
+from rag_pipeline import(
     APPLY_URL,
+    OFFICIAL_WEBSITE_URL,
     UNIVERSITY_NAME,
     build_index,
     index_exists,
     index_is_stale,
     prepare,
+    render_social_bar,
     stream_reply,
     warm_up,
 )
@@ -364,7 +367,10 @@ except ValueError as e:
     st.error(str(e))
     st.stop()
 
-# ---------------- Events ticker — always shown at the very top ----------------
+# ---------------- Social media bar (Facebook / Twitter / YouTube / Instagram) — very top, top-left ----------------
+render_social_bar()
+
+# ---------------- Events ticker — always shown at the top ----------------
 render_events_ticker()
 
 # ---------------- Step 1: Language selection (shown only once, before chat starts) ----------------
@@ -476,8 +482,8 @@ if prompt:
         messages, sources = prepare(prompt, history, language=lang_code)
         reply = st.write_stream(stream_reply(messages))
         st.markdown(CONTACT_FOOTER)
-        if sources:
-            st.caption("Sources: " + ", ".join(sources))
+        if sources:  # CHANGED: the ONLY source shown is the official Akal University website
+            st.caption(f"Source: [Akal University Official Website]({OFFICIAL_WEBSITE_URL})")
     full_reply = reply + CONTACT_FOOTER
     st.session_state.messages.append({"role": "assistant", "content": full_reply})
 
