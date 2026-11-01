@@ -43,9 +43,11 @@ INSTAGRAM_URL = "https://www.instagram.com/akaluniversity/"
 YOUTUBE_USER = "akaluniversityts"
 YOUTUBE_URL = "https://www.youtube.com/akaluniversityts"
 
-SOURCE_ORDER = ["Facebook", "Twitter", "YouTube", "Instagram"]
-SOURCE_ICON = {"Facebook": "📘", "Twitter": "🐦", "YouTube": "▶️", "Instagram": "📸"}
-SOURCE_HOME = {"Facebook": FACEBOOK_URL, "Twitter": f"https://twitter.com/{TWITTER_DEFAULT_USER}",
+WEBSITE_HOME = "https://auts.ac.in/"
+SOURCE_ORDER = ["Website", "Facebook", "Twitter", "YouTube", "Instagram"]
+SOURCE_ICON = {"Website": "🌐", "Facebook": "📘", "Twitter": "🐦", "YouTube": "▶️", "Instagram": "📸"}
+SOURCE_HOME = {"Website": "https://auts.ac.in/announcements/", "Facebook": FACEBOOK_URL,
+               "Twitter": f"https://twitter.com/{TWITTER_DEFAULT_USER}",
                "YouTube": YOUTUBE_URL, "Instagram": INSTAGRAM_URL}
 
 # Only posts that talk about one of these are shown (webinars, competitions, events ...).
@@ -182,13 +184,16 @@ def _twitter():
         return None
     username = _env("TWITTER_USERNAME", TWITTER_DEFAULT_USER)
     auth = {"Authorization": f"Bearer {token}"}
+    if _env("TWITTER_USER_ID"):  # set this in .env to avoid a paid user-lookup call
+        _TW_ID_CACHE[username] = _env("TWITTER_USER_ID")
     if username not in _TW_ID_CACHE:
         r = requests.get(f"https://api.twitter.com/2/users/by/username/{username}", headers=auth, timeout=TIMEOUT)
         r.raise_for_status()
         _TW_ID_CACHE[username] = r.json()["data"]["id"]
     r = requests.get(
         f"https://api.twitter.com/2/users/{_TW_ID_CACHE[username]}/tweets",
-        params={"max_results": 20, "tweet.fields": "created_at", "exclude": "retweets,replies"},
+        params={"max_results": max(5, min(_int_env("TWITTER_MAX_RESULTS", 10), 100)),
+                "tweet.fields": "created_at", "exclude": "retweets,replies"},
         headers=auth, timeout=TIMEOUT,
     )
     r.raise_for_status()
@@ -254,6 +259,57 @@ def _youtube():
     raise last_err or RuntimeError("YouTube feed not reachable")
 
 
+# ---------------- Official website announcements (public page, no token needed) ----------------
+def _website():
+    """The 'Important Announcements' table of https://auts.ac.in/ (date + title + link)."""
+    if _env("SOCIAL_WEBSITE", "1") == "0":
+        return None
+    from bs4 import BeautifulSoup
+
+    date_re = re.compile(r"\b(\d{2})/(\d{2})/(\d{4})\b")
+    items, seen = [], set()
+    for page in (WEBSITE_HOME, WEBSITE_HOME + "announcements/"):
+        try:
+            r = requests.get(page, headers={**HEADERS, "Accept-Language": "en"}, timeout=TIMEOUT)
+            r.raise_for_status()
+        except Exception as e:
+            print(f"[social] Website page {page} not readable: {str(e)[:120]}")
+            continue
+        soup = BeautifulSoup(r.text, "html.parser")
+        links = [a for a in soup.find_all("a", href=True) if "/announcement/" in a["href"]]
+        found = 0
+        for a in links:
+            href = a["href"]
+            title = a.get_text(" ", strip=True)
+            if not title or href in seen:
+                continue
+            ts, node = None, a
+            for _ in range(5):  # look for the ONE date that belongs to this link (its row / card)
+                node = node.parent
+                if node is None:
+                    break
+                dates = date_re.findall(node.get_text(" "))
+                if len(dates) == 1:
+                    day, month, year = (int(x) for x in dates[0])
+                    try:
+                        ts = datetime(year, month, day, tzinfo=timezone.utc).timestamp()
+                    except ValueError:
+                        ts = None
+                    break
+                if len(dates) > 1:  # container too big (several announcements): stop
+                    break
+            if ts is None:
+                continue
+            it = _item("Website", title, href, ts, force_event=True)
+            if it:
+                seen.add(href)
+                items.append(it)
+                found += 1
+        print(f"[social] Website {page}: {len(links)} announcement links, {found} with a date "
+              f"(page size {len(r.text)} chars)")
+    return items
+
+
 # ---------------- cache of the last good result (used only if a platform is temporarily down) ----------------
 def _load_cache():
     try:
@@ -274,7 +330,8 @@ def _save_cache(cache):
 def fetch_live_items():
     """Latest event / webinar / competition posts of all four platforms, newest first.
     Returns [{'source', 'text', 'url', 'ts', 'event'}, ...] (empty list when nothing could be read)."""
-    fetchers = {"Facebook": _facebook, "Twitter": _twitter, "YouTube": _youtube, "Instagram": _instagram}
+    fetchers = {"Website": _website, "Facebook": _facebook, "Twitter": _twitter,
+                "YouTube": _youtube, "Instagram": _instagram}
     cache = _load_cache()
     by_source = {}
 
@@ -294,6 +351,8 @@ def fetch_live_items():
                 continue
             by_source[name] = result
             cache[name] = result
+            print(f"[social] {name}: {len(result)} posts read, "
+                  f"{sum(1 for i in result if i.get('event'))} of them match event words")
     _save_cache(cache)
 
     now = time.time()
@@ -301,9 +360,11 @@ def fetch_live_items():
     per_source = _int_env("SOCIAL_PER_SOURCE", 4)
     max_items = _int_env("SOCIAL_MAX_ITEMS", 12)
 
+    filter_on = _env("SOCIAL_FILTER_EVENTS", "1") != "0"  # SOCIAL_FILTER_EVENTS=0 -> show ALL recent posts
     chosen, seen = [], set()
     for name in SOURCE_ORDER:
-        fresh = [i for i in by_source.get(name, []) if i.get("event") and now - i["ts"] <= max_age]
+        fresh = [i for i in by_source.get(name, [])
+                 if (i.get("event") or not filter_on) and now - i["ts"] <= max_age]
         fresh.sort(key=lambda i: -i["ts"])
         for i in fresh[:per_source]:
             key = i["text"].lower()
@@ -315,5 +376,5 @@ def fetch_live_items():
 
 
 if __name__ == "__main__":  # quick test:  python -m utils.social_feed
-    for it in fetch_live_items():
-        print(it["source"], "|", _date_text(it["ts"]), "|", it["text"], "|", it["url"])
+       for it in fetch_live_items():
+           print(it["source"], "|", _date_text(it["ts"]), "|", it["text"], "|", it["url"])
