@@ -1,0 +1,47 @@
+# Akal University - VERIFIED officials and faculty directory (data file, not code)
+#
+# One record per line, 7 fields separated by the | sign:
+#   Designation | Name | Email | Mobile | Department | Note | Source page
+#
+# - Every line was copied from a page of the official website https://auts.ac.in/ (the Source field says which),
+#   or from the "University Administration" table of the website (Name / Position / Email).
+# - The same person may appear on several lines (one line per official page). The chatbot merges them and, if the
+#   official pages write a title differently (for example "Prof." on one page and "Dr." on another), it says so.
+# - To add or correct a person, add or edit a line. Leave a field empty if the official page does not show it.
+#   Do NOT add anything that is not on an official page: the chatbot answers ONLY from these verified lines.
+# - utils/people_directory.py can also read the website again and write  university_officials_live.txt  (see its docs).
+# - Checked on 02 Nov 2026.
+#
+# ---- University administration (Governance page table / UGC Mandatory Disclosures page) ----
+Chancellor | Dr. Davinder Singh, MD | chancellor@auts.ac.in | | | | https://auts.ac.in/governance/
+Chancellor | Honorable Dr Davinder Singh ji | secretarykts@barusahib.org | | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Chancellor | Honorable Dr Davinder Singh ji | | | | MBBS, MD (Delhi University) | https://auts.ac.in/about/chancellors-message/
+Founder Chancellor | H.E. (Late) Padma Shri Baba Iqbal Singh Ji | | | | Founder President, Kalgidhar Trust, Baru Sahib | https://auts.ac.in/about/chancellors-message/
+Vice-Chancellor | Prof. Gurmail Singh | vc@auts.ac.in | | | | https://auts.ac.in/governance/
+Vice-Chancellor | Prof. Gurmail Singh | vc@auts.ac.in | | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Vice-Chancellor | Dr. Gurmail Singh | | | | | https://auts.ac.in/about/chancellors-message/
+Registrar | Prof. Sawarn Singh | registrar@auts.ac.in | | | | https://auts.ac.in/governance/
+Registrar | Dr. Sawarn Singh | registrar@auts.ac.in | +919316163073 | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Appellate Authority | Prof. Sawarn Singh | registrar@auts.ac.in | | | | https://auts.ac.in/governance/
+Finance Officer | Mr. Dinesh Kumar Sood | fdo@auts.ac.in | | | | https://auts.ac.in/governance/
+Finance Officer | Mr. Dinesh Kumar Sood | | 9816015000 | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Controller of Examination | Prof. Sukhjeet Singh | coe@auts.ac.in | | | | https://auts.ac.in/governance/
+Controller of Examination | Prof. Sukhjeet Singh | coe@auts.ac.in | +918194801454 | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Chief Vigilance Officer | Maj. Gen. (Dr.) G. S. Lamba | daa@auts.ac.in | | | | https://auts.ac.in/governance/
+Chief Vigilance Officer | Maj. (Gen) Dr. G. S. Lamba | daa@auts.ac.in | +919464305213 | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Ombudsperson | Prof. S.K. Chadha | skchadha_ubs@rediffmail.com | | | | https://auts.ac.in/governance/
+Ombudsperson | Prof. S.K. Chadha | skchadha_ubs@rediffmail.com | | | | https://auts.ac.in/ugc-mandatory-disclosures/
+Training and Placement Officer (TPO) | Dr. Upinder Kaur | tpo@auts.ac.in | | | | https://auts.ac.in/governance/
+#
+# ---- Faculty shown on the "Akal Faculty" page (only the people that page lists) ----
+Assistant Professor | Dr. Harwinder Kaur | | | Department of Botany | M.Sc. (Hons. School - Gold Medalist), DST - Inspire Fellowship), Ph.D. | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Atul Kumar | | | Department of Chemistry | M.Sc., CSIR-JRF, Ph.D. (NCL - Pune), PDF (Pune), PDF (South Korea) | https://auts.ac.in/akal-faculty/
+Associate Professor | Dr. Rashim Wadhwa | | | Department of Education | M.Sc. (Chemistry), M.Ed., M.Phil., (NUEPA), Ph.D. (NIEPA) (PDF (HSE, Russia),UGC-NET | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Lois Jose | | | Department of English | M.A. (Gold Medallist), UGC-NET, Ph.D., PG Diploma in Teaching Skills, Diploma in Computer Automation | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Shamsudheen M.K. | | | Department of English | M.A., UGC-NET, Ph.D, PDF, PG Diploma in Linguistics and PGDFC | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Jaswinder Kaur | | | Department of Punjabi | M.A. (Gold Medalist), M.Phil., UGC-JRF, M.A. (Sikh Studies), Ph.D. | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Zohra Khatoon | | | Department of Psychology | M.A., UGC-NET, Ph.D, PG Diploma in Counselling and Health Management | https://auts.ac.in/akal-faculty/
+Assistant Professor | Ms. Diksha Kapoor | | | Department of Psychology | M.A.,PG Diploma In Counselling and Family Theraphy,Ph.D.(Pursuing) | https://auts.ac.in/akal-faculty/
+Assistant Professor | Dr. Parvin Kumar | | | Department of Computer Science & Engineering | M.Tech., (CSE-IIIT Hyderabad), GATE, Ph.D. (BITS-Mersa, Ranchi), PDF (JNU) | https://auts.ac.in/akal-faculty/
+Faculty member | Dr. Pardeep Singh Cheema | | | Department of Computer Science & Engineering | B.Tech, M.S (BITS Pilani), MBA, PhD | https://auts.ac.in/akal-faculty/
+Faculty member | Maj.Gen(retd.) Dr.G.S. Lamba | | | Department of Computer Science & Engineering | M. Tech. Computer Science, M. Phil (Social Science) Ph.D (Cyber Security) | https://auts.ac.in/akal-faculty/
